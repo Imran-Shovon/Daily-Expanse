@@ -1,0 +1,219 @@
+// Prisma schema for the Daily Expense Tracker.
+//
+// Conventions
+// - Monetary amounts use NUMERIC(14, 2). Never store money as floating point.
+// - Transaction / budget / schedule dates are calendar dates (PostgreSQL DATE). They are
+//   interpreted in the owning user's time zone, so no time-of-day or offset is stored.
+// - Every user-owned row carries userId and is deleted with the user (cascade).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  MOBILE_PAYMENT
+  OTHER
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  name             String
+  currency         String   @default("USD") @db.VarChar(3)
+  timezone         String   @default("UTC")
+  dateFormat       String   @default("yyyy-MM-dd")
+  theme            String   @default("system")
+  defaultDateRange String   @default("this_month")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  refreshTokens         RefreshToken[]
+  passwordResetTokens   PasswordResetToken[]
+  categories            Category[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
+
+  @@map("users")
+}
+
+/// Refresh tokens are opaque random strings; only their SHA-256 hash is stored.
+/// Tokens rotate on every use. All tokens issued from one login share a familyId so that
+/// reuse of an already-rotated token revokes the whole family (theft detection).
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  familyId     String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?   @db.VarChar(255)
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Category {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String          @db.VarChar(50)
+  type      TransactionType
+  color     String          @db.VarChar(7)
+  icon      String          @db.VarChar(40)
+  isDefault Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
+
+  @@unique([userId, type, name])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id                     String          @id @default(cuid())
+  userId                 String
+  categoryId             String
+  title                  String          @db.VarChar(120)
+  amount                 Decimal         @db.Decimal(14, 2)
+  type                   TransactionType
+  date                   DateTime        @db.Date
+  paymentMethod          PaymentMethod   @default(CASH)
+  notes                  String?         @db.VarChar(1000)
+  tags                   String[]        @default([])
+  recurringTransactionId String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Categories in use cannot be deleted; the API offers reassignment instead.
+  category             Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  recurringExecution   RecurringExecution?
+
+  @@index([userId, date])
+  @@index([userId, type, date])
+  @@index([userId, categoryId])
+  @@index([recurringTransactionId])
+  @@map("transactions")
+}
+
+/// A null categoryId means an overall budget covering all expense categories.
+model Budget {
+  id         String       @id @default(cuid())
+  userId     String
+  categoryId String?
+  name       String?      @db.VarChar(80)
+  amount     Decimal      @db.Decimal(14, 2)
+  period     BudgetPeriod @default(MONTHLY)
+  startDate  DateTime     @db.Date
+  endDate    DateTime?    @db.Date
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@map("budgets")
+}
+
+model RecurringTransaction {
+  id            String              @id @default(cuid())
+  userId        String
+  categoryId    String
+  title         String              @db.VarChar(120)
+  amount        Decimal             @db.Decimal(14, 2)
+  type          TransactionType
+  paymentMethod PaymentMethod       @default(CASH)
+  notes         String?             @db.VarChar(1000)
+  tags          String[]            @default([])
+  frequency     RecurrenceFrequency
+  interval      Int                 @default(1)
+  startDate     DateTime            @db.Date
+  endDate       DateTime?           @db.Date
+  /// Next occurrence still to be generated; null once the schedule is finished.
+  nextRunDate   DateTime?           @db.Date
+  lastRunDate   DateTime?           @db.Date
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  executions   RecurringExecution[]
+
+  @@index([userId])
+  @@index([isActive, nextRunDate])
+  @@map("recurring_transactions")
+}
+
+/// One row per generated occurrence. The unique constraint on
+/// (recurringTransactionId, scheduledDate) makes processing idempotent: an occurrence can
+/// never produce two transactions, even if two workers run concurrently.
+model RecurringExecution {
+  id                     String   @id @default(cuid())
+  recurringTransactionId String
+  scheduledDate          DateTime @db.Date
+  transactionId          String?  @unique
+  createdAt              DateTime @default(now())
+
+  recurringTransaction RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)
+  transaction          Transaction?         @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringTransactionId, scheduledDate])
+  @@map("recurring_executions")
+}

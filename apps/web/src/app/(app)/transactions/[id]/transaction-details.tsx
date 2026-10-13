@@ -1,0 +1,177 @@
+'use client';
+
+import { PAYMENT_METHOD_LABELS } from '@expense/shared';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CreditCard,
+  FileQuestion,
+  Pencil,
+  Repeat,
+  StickyNote,
+  Tag,
+  Trash2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { CategoryBadge, CategoryIcon } from '@/components/common/category-icon';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { FormattedDate } from '@/components/common/formatted-date';
+import { Money } from '@/components/common/money';
+import { EmptyState, ErrorState, LoadingSkeleton } from '@/components/common/states';
+import { TransactionDialog } from '@/components/transactions/transaction-dialog';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/misc';
+import { ApiError } from '@/lib/api/client';
+import { useDeleteTransaction, useTransaction } from '@/lib/api/hooks';
+
+function Detail({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: typeof Tag;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex gap-3 py-3.5">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <dt className="text-xs text-muted-foreground">{label}</dt>
+        <dd className="mt-0.5 text-sm break-words">{children}</dd>
+      </div>
+    </div>
+  );
+}
+
+export function TransactionDetails({ id }: { id: string }) {
+  const router = useRouter();
+  const query = useTransaction(id);
+  const remove = useDeleteTransaction();
+  const [editing, setEditing] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const t = query.data;
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-5">
+      <Button asChild variant="ghost" size="sm" className="-ml-2">
+        <Link href="/transactions">
+          <ArrowLeft /> All transactions
+        </Link>
+      </Button>
+
+      {query.isLoading ? (
+        <Card>
+          <LoadingSkeleton variant="list" rows={4} />
+        </Card>
+      ) : query.isError ? (
+        <Card>
+          {query.error instanceof ApiError && query.error.status === 404 ? (
+            <EmptyState
+              icon={FileQuestion}
+              title="Transaction not found"
+              description="It may have been deleted, or the link is incorrect."
+              action={
+                <Button asChild variant="outline">
+                  <Link href="/transactions">Back to transactions</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <ErrorState onRetry={() => query.refetch()} />
+          )}
+        </Card>
+      ) : (
+        t && (
+          <>
+            <Card className="overflow-hidden">
+              <div className="flex flex-col items-center gap-3 border-b bg-muted/30 px-6 py-8 text-center">
+                <CategoryIcon icon={t.category.icon} color={t.category.color} size="lg" />
+                <div>
+                  <h1 className="text-lg font-semibold tracking-tight">{t.title}</h1>
+                  <p className="mt-1 text-3xl font-semibold tracking-tight">
+                    <Money amount={t.amount} type={t.type} />
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Badge variant={t.type === 'INCOME' ? 'default' : 'secondary'}>
+                    {t.type === 'INCOME' ? 'Income' : 'Expense'}
+                  </Badge>
+                  <CategoryBadge category={t.category} />
+                </div>
+              </div>
+              <dl className="divide-y px-6">
+                <Detail icon={CalendarDays} label="Date">
+                  <FormattedDate date={t.date} />
+                </Detail>
+                <Detail icon={CreditCard} label="Payment method">
+                  {PAYMENT_METHOD_LABELS[t.paymentMethod]}
+                </Detail>
+                <Detail icon={Tag} label="Tags">
+                  {t.tags.length ? (
+                    <span className="flex flex-wrap gap-1.5">
+                      {t.tags.map((tag) => (
+                        <Badge key={tag} variant="outline">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">No tags</span>
+                  )}
+                </Detail>
+                <Detail icon={StickyNote} label="Notes">
+                  {t.notes ? (
+                    <span className="whitespace-pre-wrap">{t.notes}</span>
+                  ) : (
+                    <span className="text-muted-foreground">No notes</span>
+                  )}
+                </Detail>
+                {t.recurringTransactionId && (
+                  <Detail icon={Repeat} label="Source">
+                    Generated by a{' '}
+                    <Link href="/recurring" className="font-medium text-primary hover:underline">
+                      recurring schedule
+                    </Link>
+                  </Detail>
+                )}
+              </dl>
+              <div className="flex flex-col-reverse gap-2 border-t bg-muted/20 px-6 py-4 sm:flex-row sm:justify-between">
+                <p className="self-center text-xs text-muted-foreground">
+                  Last updated {new Date(t.updatedAt).toLocaleString()}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 sm:flex-none"
+                    onClick={() => setDeleting(true)}
+                  >
+                    <Trash2 /> Delete
+                  </Button>
+                  <Button className="flex-1 sm:flex-none" onClick={() => setEditing(true)}>
+                    <Pencil /> Edit
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            <TransactionDialog open={editing} onOpenChange={setEditing} transaction={t} />
+            <ConfirmDialog
+              open={deleting}
+              onOpenChange={setDeleting}
+              title="Delete this transaction?"
+              description="This cannot be undone. Your totals and budgets will update immediately."
+              onConfirm={async () => {
+                await remove.mutateAsync(t.id);
+                router.replace('/transactions');
+              }}
+            />
+          </>
+        )
+      )}
+    </div>
+  );
+}

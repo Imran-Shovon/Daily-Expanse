@@ -1,0 +1,28 @@
+{
+  "name": "expense-tracker",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @expense/api test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @expense/api prisma:migrate",
+    "db:deploy": "pnpm --filter @expense/api prisma:deploy",
+    "db:seed": "pnpm --filter @expense/api prisma:seed",
+    "db:studio": "pnpm --filter @expense/api exec prisma studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8"
+  }
+}
