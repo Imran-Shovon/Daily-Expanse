@@ -18,3 +18,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Agent skills installed by tooling (not part of the app)
+.agents/
+.claude/
