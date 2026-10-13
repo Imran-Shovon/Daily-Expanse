@@ -1,0 +1,9 @@
+{
+  "name": "@expense/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vercel Function wrapper that serves the compiled NestJS API (@expense/api).",
+  "dependencies": {
+    "@expense/api": "workspace:*"
+  }
+}

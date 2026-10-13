@@ -28,6 +28,7 @@ import { toCategorySummary, toTransactionDto, TransactionWithCategory } from '..
 import { DateRangeError, pickGranularity, resolveDateRange } from '../common/utils/date-range';
 import { fromDbDate, maxDate, minDate, PlainDate, toDbDate } from '../common/utils/plain-date';
 import { PrismaService } from '../prisma/prisma.service';
+import { RecurringService } from '../recurring/recurring.service';
 import { UsersService } from '../users/users.service';
 import { ExportQueryDto } from './dto/reports.dto';
 
@@ -50,6 +51,7 @@ export class AnalyticsService {
     private readonly prisma: PrismaService,
     private readonly users: UsersService,
     private readonly budgets: BudgetsService,
+    private readonly recurring: RecurringService,
   ) {}
 
   async resolveRange(userId: string, query: DateRangeQueryDto): Promise<RangeContext> {
@@ -91,6 +93,9 @@ export class AnalyticsService {
   }
 
   async summary(userId: string, query: DateRangeQueryDto): Promise<DashboardSummary> {
+    // Catch up recurring transactions that are due, so the dashboard is current even where no
+    // background scheduler runs (serverless). Idempotent and cheap when nothing is due.
+    await this.recurring.processDueForUser(userId);
     const { today, range } = await this.resolveRange(userId, query);
 
     const [totals, cumulative, recent] = await Promise.all([

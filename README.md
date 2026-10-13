@@ -88,6 +88,23 @@ docker compose --profile app up --build   # db + api (:4000) + web (:3000)
 
 The API container runs `prisma migrate deploy` on start. `API_URL` for the web image is a build argument because Next.js resolves rewrites at build time.
 
+### Vercel
+
+The app deploys to Vercel as **one project with two [Services](https://vercel.com/docs/services)** (Beta), configured in `vercel.json`:
+
+- `web`: the Next.js app (`apps/web`), serving every path except the API.
+- `api`: a Node.js function (`apps/server/api/index.js`) that serves the compiled NestJS app (`apps/api/src/serverless.ts`) for `/api/v1/*` and `/api/docs`. The API is built with `nest build`, which keeps the decorator metadata Nest needs. A wrapper package is used so Vercel doesn't apply its NestJS preset, which can't follow pnpm's linked `node_modules`.
+- Both share one domain, so the refresh cookie stays first-party.
+- The build runs `prisma migrate deploy` against `DATABASE_URL_UNPOOLED`.
+- A daily Vercel Cron calls `GET /api/v1/internal/cron/recurring` with `Authorization: Bearer $CRON_SECRET`. Due recurring transactions are also processed when a user opens the dashboard. Set `RECURRING_SCHEDULER_ENABLED=false` on Vercel, since serverless functions can't run the in-process scheduler.
+
+Required project environment variables: `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (injected by the Neon Marketplace integration), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CRON_SECRET`, `COOKIE_SECURE=true`, `RECURRING_SCHEDULER_ENABLED=false`, `WEB_URL` and `API_URL` (the production URL), and `ENABLE_EXPERIMENTAL_COREPACK=1` (to use the pnpm version from `packageManager`).
+
+```bash
+vercel deploy          # preview
+vercel deploy --prod   # production
+```
+
 ## Environment variables
 
 ### `apps/api/.env`

@@ -138,12 +138,13 @@ describe('Auth (e2e)', () => {
       );
       expect(second).not.toBe(first);
 
-      // Old token is no longer accepted, but within the grace window the session survives.
+      // Within the grace window a just-rotated token still yields a session (the new cookie may
+      // never have reached the browser), without revoking the family.
       await http
         .post(`${API}/auth/refresh`)
         .set('Cookie', first)
         .set('x-csrf-protection', '1')
-        .expect(401);
+        .expect(200);
       await http
         .post(`${API}/auth/refresh`)
         .set('Cookie', second)

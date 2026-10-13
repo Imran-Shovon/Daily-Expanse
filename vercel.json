@@ -1,0 +1,44 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": "apps/web",
+      "framework": "nextjs",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "cd ../.. && pnpm --filter @expense/shared build && pnpm --filter @expense/web build"
+    },
+    "api": {
+      "root": "apps/server",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "cd ../.. && pnpm --filter @expense/shared build && cd apps/api && npx prisma generate && DATABASE_URL=\"$DATABASE_URL_UNPOOLED\" npx prisma migrate deploy && npx nest build",
+      "runtime": "node",
+      "entrypoint": "api/index.js"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/api/docs(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/internal/cron/recurring",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

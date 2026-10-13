@@ -72,6 +72,15 @@ class EnvironmentVariables {
   @Min(0)
   @IsOptional()
   TRUST_PROXY = 1;
+
+  /**
+   * Shared secret for the scheduled-job endpoint. Vercel Cron sends it as
+   * `Authorization: Bearer <CRON_SECRET>`. When unset, the endpoint is disabled.
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  CRON_SECRET?: string;
 }
 
 export type AppConfig = EnvironmentVariables;

@@ -7,7 +7,9 @@
 // - Every user-owned row carries userId and is deleted with the user (cascade).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // native for local dev, rhel-openssl-3.0.x for Vercel Functions (Amazon Linux 2023)
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

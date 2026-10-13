@@ -7,10 +7,11 @@ import type { AppConfig } from '../config/configuration';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
- * A rotated token presented again within this window is treated as a benign race (two tabs
- * refreshing at once) instead of theft, so the session survives.
+ * A rotated token presented again within this window is treated as a benign race instead of
+ * theft: two tabs refreshing at once, or a refresh whose response (with the new cookie) never
+ * reached the browser because the user navigated or reloaded mid-request.
  */
-const REUSE_GRACE_MS = 10_000;
+const REUSE_GRACE_MS = 30_000;
 
 export interface IssuedTokens {
   accessToken: string;
@@ -68,8 +69,13 @@ export class TokenService {
 
   /**
    * Rotates a refresh token: the presented token is revoked and a new one in the same family
-   * is issued. Presenting an already-rotated token outside the grace window revokes the whole
-   * family, logging out whoever holds the stolen copy.
+   * is issued.
+   *
+   * Presenting an already-rotated token:
+   * - within the grace window, while the family still has a live token: treated as a lost
+   *   response or a race, and a new token in the same family is issued;
+   * - otherwise: treated as theft, and the whole family is revoked, logging out whoever holds
+   *   the stolen copy.
    */
   async rotate(
     presented: string,
@@ -79,27 +85,44 @@ export class TokenService {
       where: { tokenHash: this.hashToken(presented) },
     });
     if (!record) throw new UnauthorizedException('Invalid refresh token');
-
-    if (record.revokedAt) {
-      const sinceRevoked = Date.now() - record.revokedAt.getTime();
-      if (!record.replacedById || sinceRevoked > REUSE_GRACE_MS) {
-        this.logger.warn(
-          `Refresh token reuse detected; revoking session family for user ${record.userId}`,
-        );
-        await this.revokeFamily(record.familyId);
-      }
-      throw new UnauthorizedException('Refresh token is no longer valid');
-    }
     if (record.expiresAt.getTime() <= Date.now()) {
       throw new UnauthorizedException('Refresh token expired');
     }
 
     // Conditional update guarantees only one concurrent request can rotate this token.
-    const claimed = await this.prisma.refreshToken.updateMany({
-      where: { id: record.id, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-    if (claimed.count === 0) throw new UnauthorizedException('Refresh token is no longer valid');
+    const claimed = record.revokedAt
+      ? { count: 0 }
+      : await this.prisma.refreshToken.updateMany({
+          where: { id: record.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+
+    if (claimed.count === 0) {
+      const current = await this.prisma.refreshToken.findUniqueOrThrow({
+        where: { id: record.id },
+      });
+      const revokedAt = current.revokedAt?.getTime() ?? Date.now();
+      // Time-based only: the replacement id is written just after the claim, so a racing
+      // request may not see it yet. The live-family check below keeps logouts effective.
+      const withinGrace = Date.now() - revokedAt <= REUSE_GRACE_MS;
+      const familyAlive =
+        withinGrace &&
+        (await this.prisma.refreshToken.count({
+          where: { familyId: record.familyId, revokedAt: null, expiresAt: { gt: new Date() } },
+        })) > 0;
+      if (!familyAlive) {
+        if (!withinGrace) {
+          this.logger.warn(
+            `Refresh token reuse detected; revoking session family for user ${record.userId}`,
+          );
+          await this.revokeFamily(record.familyId);
+        }
+        throw new UnauthorizedException('Refresh token is no longer valid');
+      }
+      // Benign: the browser never received the rotated cookie, or two tabs raced.
+      const tokens = await this.issue(record.userId, userAgent, record.familyId);
+      return { userId: record.userId, tokens };
+    }
 
     const tokens = await this.issue(record.userId, userAgent, record.familyId);
     await this.prisma.refreshToken.update({

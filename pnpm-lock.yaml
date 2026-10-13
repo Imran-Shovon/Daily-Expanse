@@ -294,6 +294,12 @@ importers:
         specifier: ^8.44.1
         version: 8.71.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)
 
+  apps/server:
+    dependencies:
+      '@expense/api':
+        specifier: workspace:*
+        version: link:../api
+
   apps/web:
     dependencies:
       '@expense/shared':
