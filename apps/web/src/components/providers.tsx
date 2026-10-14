@@ -6,6 +6,7 @@ import * as React from 'react';
 import { Toaster } from 'sonner';
 import { ApiError } from '@/lib/api/client';
 import { AuthProvider } from '@/lib/auth/auth-provider';
+import { LanguageProvider } from '@/lib/i18n/language-provider';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -28,10 +29,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(makeQueryClient);
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
-        <Toaster position="bottom-right" richColors closeButton />
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>{children}</AuthProvider>
+          <Toaster position="bottom-right" richColors closeButton />
+        </QueryClientProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

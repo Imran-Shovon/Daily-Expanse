@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { RecurringTransaction } from '@expense/shared';
 import {
@@ -39,11 +40,14 @@ import {
 import { cn } from '@/lib/utils';
 
 function ExecutionHistory({ id }: { id: string }) {
+  const { t: tr } = useLanguage();
   const query = useRecurringExecutions(id);
   if (query.isLoading) return <Skeleton className="mx-5 mb-4 h-16" />;
   if (!query.data?.length)
     return (
-      <p className="px-5 pb-4 text-sm text-muted-foreground">No transactions generated yet.</p>
+      <p className="px-5 pb-4 text-sm text-muted-foreground">
+        {tr('No transactions generated yet.')}
+      </p>
     );
   return (
     <ul className="mx-5 mb-4 grid gap-1.5 rounded-lg border bg-muted/30 p-3 text-sm sm:grid-cols-2">
@@ -55,10 +59,10 @@ function ExecutionHistory({ id }: { id: string }) {
               href={`/transactions/${e.transactionId}`}
               className="text-xs font-medium text-primary hover:underline"
             >
-              View transaction
+              {tr('View transaction')}{' '}
             </Link>
           ) : (
-            <span className="text-xs text-muted-foreground">Transaction deleted</span>
+            <span className="text-xs text-muted-foreground">{tr('Transaction deleted')}</span>
           )}
         </li>
       ))}
@@ -75,6 +79,7 @@ function RecurringRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t: tr, language, number } = useLanguage();
   const toggle = useToggleRecurring();
   const [expanded, setExpanded] = React.useState(false);
   const finished = item.nextRunDate === null;
@@ -87,18 +92,18 @@ function RecurringRow({
           <p className="flex items-center gap-2 font-medium">
             <span className="truncate">{item.title}</span>
             {finished ? (
-              <Badge variant="secondary">Finished</Badge>
+              <Badge variant="secondary">{tr('Finished')}</Badge>
             ) : !item.isActive ? (
-              <Badge variant="outline">Paused</Badge>
+              <Badge variant="outline">{tr('Paused')}</Badge>
             ) : null}
           </p>
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
             <Repeat className="size-3" aria-hidden />
-            {describeFrequency(item.frequency, item.interval)} · {item.category.name}
+            {describeFrequency(item.frequency, item.interval, language)} · {item.category.name}
             {item.endDate && (
               <>
                 {' '}
-                · until <FormattedDate date={item.endDate} />
+                {tr('· until')} <FormattedDate date={item.endDate} />
               </>
             )}
           </p>
@@ -108,13 +113,13 @@ function RecurringRow({
           <p className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
             <CalendarClock className="size-3" aria-hidden />
             {finished ? (
-              'No upcoming runs'
+              tr('No upcoming runs')
             ) : item.isActive ? (
               <>
-                Next <FormattedDate date={item.nextRunDate!} />
+                {tr('Next')} <FormattedDate date={item.nextRunDate!} />
               </>
             ) : (
-              'Paused'
+              tr('Paused')
             )}
           </p>
         </div>
@@ -123,24 +128,32 @@ function RecurringRow({
             checked={item.isActive}
             disabled={toggle.isPending || finished}
             onCheckedChange={(active) => toggle.mutate({ id: item.id, active })}
-            aria-label={item.isActive ? `Pause ${item.title}` : `Resume ${item.title}`}
+            aria-label={
+              item.isActive
+                ? tr('Pause {v0}', { v0: item.title })
+                : tr('Resume {v0}', { v0: item.title })
+            }
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${item.title}`}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={tr('Actions for {v0}', { v0: item.title })}
+              >
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={onEdit}>
-                <Pencil /> Edit
+                <Pencil /> {tr('Edit')}{' '}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setExpanded((e) => !e)}>
-                <History /> {expanded ? 'Hide history' : 'Show history'}
+                <History /> {expanded ? tr('Hide history') : tr('Show history')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={onDelete}>
-                <Trash2 /> Delete
+                <Trash2 /> {tr('Delete')}{' '}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -152,11 +165,11 @@ function RecurringRow({
         aria-expanded={expanded}
       >
         <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
-        {item.executionCount} generated
+        {number(item.executionCount)} {tr('generated')}{' '}
         {item.lastRunDate && (
           <>
             {' '}
-            · last on <FormattedDate date={item.lastRunDate} />
+            {tr('· last on')} <FormattedDate date={item.lastRunDate} />
           </>
         )}
       </button>
@@ -166,6 +179,7 @@ function RecurringRow({
 }
 
 export function RecurringView() {
+  const { t: tr } = useLanguage();
   const query = useRecurring();
   const remove = useDeleteRecurring();
   const [dialog, setDialog] = React.useState<{ open: boolean; item?: RecurringTransaction }>({
@@ -178,15 +192,17 @@ export function RecurringView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Recurring transactions"
+        title={tr('Recurring transactions')}
         description={
           items.length > 0
-            ? `${activeCount} active schedule${activeCount === 1 ? '' : 's'}. Due transactions are created automatically.`
-            : 'Automate rent, salary, subscriptions and other repeating items.'
+            ? tr('{count} active schedules. Due transactions are created automatically.', {
+                count: activeCount,
+              })
+            : tr('Automate rent, salary, subscriptions and other repeating items.')
         }
         actions={
           <Button onClick={() => setDialog({ open: true })}>
-            <Plus /> New schedule
+            <Plus /> {tr('New schedule')}{' '}
           </Button>
         }
       />
@@ -199,11 +215,13 @@ export function RecurringView() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={Repeat}
-            title="No recurring transactions"
-            description="Set up a schedule once and we will add the transaction for you every day, week, month or year."
+            title={tr('No recurring transactions')}
+            description={tr(
+              'Set up a schedule once and we will add the transaction for you every day, week, month or year.',
+            )}
             action={
               <Button onClick={() => setDialog({ open: true })}>
-                <Plus /> Create a schedule
+                <Plus /> {tr('Create a schedule')}{' '}
               </Button>
             }
           />
@@ -229,8 +247,10 @@ export function RecurringView() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
-        title="Delete this schedule?"
-        description="No more transactions will be created. Transactions it already generated are kept."
+        title={tr('Delete this schedule?')}
+        description={tr(
+          'No more transactions will be created. Transactions it already generated are kept.',
+        )}
         onConfirm={() => remove.mutateAsync(deleting!.id)}
       />
     </div>

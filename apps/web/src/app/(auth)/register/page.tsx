@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -24,7 +25,7 @@ import { passwordSchema } from '@/lib/validation';
 
 const schema = z
   .object({
-    name: z.string().trim().min(1, 'Enter your name').max(80),
+    name: z.string().trim().min(1, 'Enter your name').max(80, 'Keep the name under 80 characters'),
     email: z.email('Enter a valid email address'),
     password: passwordSchema,
     confirm: z.string(),
@@ -35,6 +36,7 @@ const schema = z
   });
 
 export default function RegisterPage() {
+  const { t: tr } = useLanguage();
   useRedirectIfAuthenticated();
   const { register: registerAccount } = useAuth();
   const router = useRouter();
@@ -59,13 +61,13 @@ export default function RegisterPage() {
   return (
     <>
       <AuthHeading
-        title="Create your account"
-        description="Start tracking in under a minute. Categories are set up for you."
+        title={tr('Create your account')}
+        description={tr('Start tracking in under a minute. Categories are set up for you.')}
       />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormAlert message={error} />
         <div className="space-y-1.5">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">{tr('Name')}</Label>
           <Input
             id="name"
             autoComplete="name"
@@ -76,7 +78,7 @@ export default function RegisterPage() {
           <FieldError message={formState.errors.name?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{tr('Email')}</Label>
           <Input
             id="email"
             type="email"
@@ -87,7 +89,7 @@ export default function RegisterPage() {
           <FieldError message={formState.errors.email?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{tr('Password')}</Label>
           <PasswordInput
             id="password"
             autoComplete="new-password"
@@ -99,12 +101,12 @@ export default function RegisterPage() {
             <FieldError message={formState.errors.password.message} />
           ) : (
             <p id="password-hint" className="text-xs text-muted-foreground">
-              At least 8 characters with a letter and a number.
+              {tr('At least 8 characters with a letter and a number.')}{' '}
             </p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirm password</Label>
+          <Label htmlFor="confirm">{tr('Confirm password')}</Label>
           <PasswordInput
             id="confirm"
             autoComplete="new-password"
@@ -115,13 +117,13 @@ export default function RegisterPage() {
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Create account
+          {tr('Create account')}{' '}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Already have an account?{' '}
+        {tr('Already have an account?')}{' '}
         <Link href="/login" className="font-medium text-primary hover:underline">
-          Sign in
+          {tr('Sign in')}{' '}
         </Link>
       </p>
     </>

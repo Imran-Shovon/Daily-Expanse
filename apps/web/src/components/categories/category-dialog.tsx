@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   CATEGORY_COLORS,
@@ -46,13 +47,14 @@ export function CategoryDialog({
   category?: Category;
   defaultType?: TransactionType;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{category ? 'Edit category' : 'New category'}</DialogTitle>
+          <DialogTitle>{category ? tr('Edit category') : tr('New category')}</DialogTitle>
           <DialogDescription>
-            Pick a name, color and icon so it is easy to spot in lists and charts.
+            {tr('Pick a name, color and icon so it is easy to spot in lists and charts.')}{' '}
           </DialogDescription>
         </DialogHeader>
         {open && (
@@ -77,6 +79,7 @@ function CategoryForm({
   defaultType: TransactionType;
   onDone: () => void;
 }) {
+  const { t: tr } = useLanguage();
   const save = useSaveCategory();
   const { register, control, handleSubmit, formState, setError } = useForm<Values>({
     resolver: zodResolver(schema),
@@ -105,8 +108,8 @@ function CategoryForm({
       <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
         <CategoryIcon icon={icon} color={color} size="lg" />
         <div className="min-w-0">
-          <p className="truncate font-medium">{name || 'Category name'}</p>
-          <p className="text-xs text-muted-foreground">Preview</p>
+          <p className="truncate font-medium">{name || tr('Category name')}</p>
+          <p className="text-xs text-muted-foreground">{tr('Preview')}</p>
         </div>
       </div>
 
@@ -115,11 +118,11 @@ function CategoryForm({
         name="type"
         render={({ field }) => (
           <div className="space-y-1.5">
-            <Label>Type</Label>
+            <Label>{tr('Type')}</Label>
             {typeLocked ? (
               <p className="text-sm text-muted-foreground">
-                {field.value === 'EXPENSE' ? 'Expense' : 'Income'} — can&apos;t change while
-                transactions use this category.
+                {field.value === 'EXPENSE' ? tr('Expense') : tr('Income')}{' '}
+                {tr("— can't change while transactions use this category.")}{' '}
               </p>
             ) : (
               <TransactionTypeToggle value={field.value} onChange={field.onChange} />
@@ -129,7 +132,7 @@ function CategoryForm({
       />
 
       <div className="space-y-1.5">
-        <Label htmlFor="c-name">Name</Label>
+        <Label htmlFor="c-name">{tr('Name')}</Label>
         <Input id="c-name" autoFocus aria-invalid={!!formState.errors.name} {...register('name')} />
         <FieldError message={formState.errors.name?.message} />
       </div>
@@ -139,14 +142,14 @@ function CategoryForm({
         name="color"
         render={({ field }) => (
           <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">Color</legend>
+            <legend className="mb-2 text-sm font-medium">{tr('Color')}</legend>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => field.onChange(c)}
-                  aria-label={`Color ${c}`}
+                  aria-label={tr('Color {v0}', { v0: c })}
                   aria-pressed={field.value === c}
                   className="flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   style={{ backgroundColor: c }}
@@ -164,7 +167,7 @@ function CategoryForm({
         name="icon"
         render={({ field }) => (
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Icon</legend>
+            <legend className="mb-2 text-sm font-medium">{tr('Icon')}</legend>
             <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10">
               {CATEGORY_ICONS.map((name) => {
                 const Icon = CATEGORY_ICON_MAP[name]!;
@@ -193,11 +196,11 @@ function CategoryForm({
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onDone}>
-          Cancel
+          {tr('Cancel')}{' '}
         </Button>
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          {category ? 'Save changes' : 'Create category'}
+          {category ? tr('Save changes') : tr('Create category')}
         </Button>
       </div>
     </form>

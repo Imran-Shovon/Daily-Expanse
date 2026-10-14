@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { BUDGET_PERIOD_LABELS, BUDGET_PERIODS, type Budget } from '@expense/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,14 +64,16 @@ export function BudgetDialog({
   /** Pre-selects a category when creating a budget from a category context. */
   defaultCategoryId?: string;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{budget ? 'Edit budget' : 'New budget'}</DialogTitle>
+          <DialogTitle>{budget ? tr('Edit budget') : tr('New budget')}</DialogTitle>
           <DialogDescription>
-            Budgets track expenses only. Income never counts against a budget, and budgets never
-            change your balance.
+            {tr(
+              'Budgets track expenses only. Income never counts against a budget, and budgets never change your balance.',
+            )}{' '}
           </DialogDescription>
         </DialogHeader>
         {open && (
@@ -95,6 +98,7 @@ function BudgetForm({
   defaultCategoryId?: string;
   onDone: () => void;
 }) {
+  const { t: tr } = useLanguage();
   const user = useUser();
   const categories = useCategories();
   const save = useSaveBudget();
@@ -146,7 +150,7 @@ function BudgetForm({
       noValidate
     >
       <div className="space-y-1.5">
-        <Label htmlFor="b-scope">Applies to</Label>
+        <Label htmlFor="b-scope">{tr('Applies to')}</Label>
         <Controller
           control={control}
           name="scope"
@@ -156,7 +160,7 @@ function BudgetForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={OVERALL}>All expenses (overall budget)</SelectItem>
+                <SelectItem value={OVERALL}>{tr('All expenses (overall budget)')}</SelectItem>
                 <SelectSeparator />
                 {expenseCategories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
@@ -173,7 +177,10 @@ function BudgetForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="b-amount">Limit ({user.currency})</Label>
+          <Label htmlFor="b-amount">
+            {tr('Limit (')}
+            {user.currency})
+          </Label>
           <Input
             id="b-amount"
             inputMode="decimal"
@@ -185,7 +192,7 @@ function BudgetForm({
           <FieldError message={formState.errors.amount?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="b-period">Period</Label>
+          <Label htmlFor="b-period">{tr('Period')}</Label>
           <Controller
             control={control}
             name="period"
@@ -197,7 +204,7 @@ function BudgetForm({
                 <SelectContent>
                   {BUDGET_PERIODS.map((p) => (
                     <SelectItem key={p} value={p}>
-                      {BUDGET_PERIOD_LABELS[p]}
+                      {tr(BUDGET_PERIOD_LABELS[p])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -209,25 +216,27 @@ function BudgetForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="b-name">
-          Name <span className="font-normal text-muted-foreground">(optional)</span>
+          {tr('Name')} <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
         </Label>
-        <Input id="b-name" placeholder="e.g. Household spending" {...register('name')} />
+        <Input id="b-name" placeholder={tr('e.g. Household spending')} {...register('name')} />
         <FieldError message={formState.errors.name?.message} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="b-start">
-            Start date <span className="font-normal text-muted-foreground">(optional)</span>
+            {tr('Start date')}{' '}
+            <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
           </Label>
           <Input id="b-start" type="date" {...register('startDate')} />
           <p className="text-xs text-muted-foreground">
-            Periods repeat from this date. Defaults to the current period.
+            {tr('Periods repeat from this date. Defaults to the current period.')}{' '}
           </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="b-end">
-            End date <span className="font-normal text-muted-foreground">(optional)</span>
+            {tr('End date')}{' '}
+            <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
           </Label>
           <Input
             id="b-end"
@@ -241,11 +250,11 @@ function BudgetForm({
 
       <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onDone}>
-          Cancel
+          {tr('Cancel')}{' '}
         </Button>
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          {budget ? 'Save changes' : 'Create budget'}
+          {budget ? tr('Save changes') : tr('Create budget')}
         </Button>
       </div>
     </form>

@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { Loader2 } from 'lucide-react';
 import * as React from 'react';
@@ -34,6 +35,7 @@ export function ConfirmDialog({
   onConfirm: () => Promise<unknown> | void;
   children?: React.ReactNode;
 }) {
+  const { t: tr } = useLanguage();
   const [pending, setPending] = React.useState(false);
 
   const handleConfirm = async () => {
@@ -61,14 +63,14 @@ export function ConfirmDialog({
         </div>
         {children}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{tr('Cancel')}</AlertDialogCancel>
           <Button
             variant={destructive ? 'destructive' : 'default'}
             onClick={handleConfirm}
             disabled={pending}
           >
             {pending && <Loader2 className="animate-spin" />}
-            {confirmLabel}
+            {tr(confirmLabel)}
           </Button>
         </div>
       </AlertDialogContent>

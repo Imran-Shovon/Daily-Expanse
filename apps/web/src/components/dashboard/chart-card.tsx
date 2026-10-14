@@ -1,3 +1,6 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language-provider';
 import * as React from 'react';
 import { ErrorState, LoadingSkeleton } from '@/components/common/states';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +55,7 @@ export function ChartLegend({
 }: {
   items: { label: string; color: string; value?: React.ReactNode }[];
 }) {
+  const { t: tr } = useLanguage();
   return (
     <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {items.map((item) => (
@@ -61,7 +65,7 @@ export function ChartLegend({
             style={{ backgroundColor: item.color }}
             aria-hidden
           />
-          <span>{item.label}</span>
+          <span>{tr(item.label)}</span>
           {item.value && <span className="font-medium text-foreground tabular">{item.value}</span>}
         </li>
       ))}

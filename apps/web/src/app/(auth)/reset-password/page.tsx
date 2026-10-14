@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -23,6 +24,7 @@ const schema = z
   });
 
 export default function ResetPasswordPage() {
+  const { t: tr } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -37,11 +39,11 @@ export default function ResetPasswordPage() {
     return (
       <>
         <AuthHeading
-          title="Invalid reset link"
-          description="This link is missing its token. Request a new one to continue."
+          title={tr('Invalid reset link')}
+          description={tr('This link is missing its token. Request a new one to continue.')}
         />
         <Button asChild className="w-full">
-          <Link href="/forgot-password">Request a new link</Link>
+          <Link href="/forgot-password">{tr('Request a new link')}</Link>
         </Button>
       </>
     );
@@ -60,13 +62,13 @@ export default function ResetPasswordPage() {
   return (
     <>
       <AuthHeading
-        title="Choose a new password"
-        description="For your security, this signs you out on every device."
+        title={tr('Choose a new password')}
+        description={tr('For your security, this signs you out on every device.')}
       />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormAlert message={error} />
         <div className="space-y-1.5">
-          <Label htmlFor="password">New password</Label>
+          <Label htmlFor="password">{tr('New password')}</Label>
           <PasswordInput
             id="password"
             autoComplete="new-password"
@@ -77,7 +79,7 @@ export default function ResetPasswordPage() {
           <FieldError message={formState.errors.password?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirm new password</Label>
+          <Label htmlFor="confirm">{tr('Confirm new password')}</Label>
           <PasswordInput
             id="confirm"
             autoComplete="new-password"
@@ -88,12 +90,12 @@ export default function ResetPasswordPage() {
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Update password
+          {tr('Update password')}{' '}
         </Button>
         {error && (
           <p className="text-center text-sm">
             <Link href="/forgot-password" className="font-medium text-primary hover:underline">
-              Request a new link
+              {tr('Request a new link')}{' '}
             </Link>
           </p>
         )}

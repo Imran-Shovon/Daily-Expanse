@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   AlertTriangle,
@@ -44,6 +45,7 @@ function greeting() {
 }
 
 export function DashboardView() {
+  const { t: tr, locale, number } = useLanguage();
   const user = useUser();
   const { money } = useFormatters();
   const quickAdd = useQuickAdd();
@@ -58,8 +60,10 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${greeting()}, ${user.name.split(' ')[0]}`}
-        description={`Here is your money at a glance for ${rangeLabel(range, user.dateFormat).toLowerCase()}.`}
+        title={`${tr(greeting())}, ${user.name.split(' ')[0]}`}
+        description={tr('Here is your money at a glance for {v0}.', {
+          v0: tr(rangeLabel(range, user.dateFormat, locale)),
+        })}
         actions={<DateRangeFilter value={range} onChange={setRange} />}
       />
 
@@ -70,23 +74,28 @@ export function DashboardView() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
-            label="Income"
+            label={tr('Income')}
             icon={ArrowUpRight}
             tone="income"
             loading={summary.isLoading}
             value={s && money(s.totalIncome)}
-            hint="Money in during this period"
+            hint={tr('Money in during this period')}
           />
           <SummaryCard
-            label="Expenses"
+            label={tr('Expenses')}
             icon={ArrowDownRight}
             tone="expense"
             loading={summary.isLoading}
             value={s && money(s.totalExpenses)}
-            hint={s && `${s.transactionCount} transaction${s.transactionCount === 1 ? '' : 's'}`}
+            hint={
+              s &&
+              tr(s.transactionCount === 1 ? '{count} transaction' : '{count} transactions', {
+                count: s.transactionCount,
+              })
+            }
           />
           <SummaryCard
-            label="Net for period"
+            label={tr('Net for period')}
             icon={Scale}
             tone="accent"
             loading={summary.isLoading}
@@ -97,25 +106,31 @@ export function DashboardView() {
                 </span>
               )
             }
-            hint={s && <>Running balance {money(s.cumulativeBalance)}</>}
+            hint={
+              s && (
+                <>
+                  {tr('Running balance')} {money(s.cumulativeBalance)}
+                </>
+              )
+            }
           />
           <SummaryCard
-            label="Savings rate"
+            label={tr('Savings rate')}
             icon={PiggyBank}
             loading={summary.isLoading}
-            value={s && formatPercent(s.savingsRate)}
+            value={s && formatPercent(s.savingsRate, undefined, locale)}
             hint={
               s &&
               (s.savingsRate === null
-                ? 'No income recorded in this period'
-                : `${money(s.netBalance)} kept from ${money(s.totalIncome)}`)
+                ? tr('No income recorded in this period')
+                : tr('{v0} kept from {v1}', { v0: money(s.netBalance), v1: money(s.totalIncome) }))
             }
           />
         </div>
       )}
 
       {s && s.budgetAlerts.length > 0 && (
-        <div className="space-y-2" aria-label="Budget warnings">
+        <div className="space-y-2" aria-label={tr('Budget warnings')}>
           {s.budgetAlerts.map((alert) => {
             const exceeded = alert.state === 'exceeded';
             const Icon = exceeded ? OctagonAlert : AlertTriangle;
@@ -139,8 +154,9 @@ export function DashboardView() {
                 <p className="min-w-0 flex-1">
                   <span className="font-medium">{alert.name}</span>{' '}
                   <span className="text-muted-foreground">
-                    {exceeded ? 'is over budget' : 'is close to its limit'} — {money(alert.spent)}{' '}
-                    of {money(alert.amount)} ({formatPercent(alert.percentUsed)})
+                    {exceeded ? tr('is over budget') : tr('is close to its limit')} —{' '}
+                    {money(alert.spent)} {tr('of')} {money(alert.amount)} (
+                    {formatPercent(alert.percentUsed, undefined, locale)})
                   </span>
                 </p>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
@@ -154,11 +170,13 @@ export function DashboardView() {
         <Card>
           <EmptyState
             icon={Receipt}
-            title="No transactions in this period"
-            description="Add your first income or expense, or pick a different date range to see your charts."
+            title={tr('No transactions in this period')}
+            description={tr(
+              'Add your first income or expense, or pick a different date range to see your charts.',
+            )}
             action={
               <Button onClick={() => quickAdd()}>
-                <Plus /> Add transaction
+                <Plus /> {tr('Add transaction')}{' '}
               </Button>
             }
           />
@@ -167,8 +185,10 @@ export function DashboardView() {
         <>
           <div className="grid gap-4 xl:grid-cols-5">
             <ChartCard
-              title="Income vs expenses"
-              description={trends.data && `Grouped by ${trends.data.granularity}`}
+              title={tr('Income vs expenses')}
+              description={
+                trends.data && tr('Grouped by {v0}', { v0: tr(trends.data.granularity) })
+              }
               loading={trends.isLoading}
               error={trends.isError}
               onRetry={() => trends.refetch()}
@@ -177,8 +197,8 @@ export function DashboardView() {
               {trends.data && <IncomeExpenseChart points={trends.data.points} />}
             </ChartCard>
             <ChartCard
-              title="Spending by category"
-              description="Where your money went"
+              title={tr('Spending by category')}
+              description={tr('Where your money went')}
               loading={breakdown.isLoading}
               error={breakdown.isError}
               onRetry={() => breakdown.refetch()}
@@ -188,8 +208,8 @@ export function DashboardView() {
                 (breakdown.data.items.length === 0 ? (
                   <EmptyState
                     icon={Wallet}
-                    title="No expenses yet"
-                    description="Expenses in this period will show up here."
+                    title={tr('No expenses yet')}
+                    description={tr('Expenses in this period will show up here.')}
                     className="py-8"
                   />
                 ) : (
@@ -201,10 +221,10 @@ export function DashboardView() {
           <div className="grid gap-4 xl:grid-cols-5">
             <Card className="xl:col-span-3">
               <CardHeader className="pb-3">
-                <CardTitle>Recent transactions</CardTitle>
+                <CardTitle>{tr('Recent transactions')}</CardTitle>
                 <Button asChild variant="ghost" size="sm" className="-mt-1 -mr-2">
                   <Link href="/transactions">
-                    View all <ArrowRight />
+                    {tr('View all')} <ArrowRight />
                   </Link>
                 </Button>
               </CardHeader>
@@ -219,13 +239,17 @@ export function DashboardView() {
               <Card className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[15px] font-semibold tracking-tight">Monthly budget</p>
+                    <p className="text-[15px] font-semibold tracking-tight">
+                      {tr('Monthly budget')}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {s?.monthlyBudget ? 'Overall spending limit' : 'Set a limit to stay on track'}
+                      {s?.monthlyBudget
+                        ? tr('Overall spending limit')
+                        : tr('Set a limit to stay on track')}
                     </p>
                   </div>
                   <Button asChild variant="ghost" size="sm" className="-mt-1 -mr-2">
-                    <Link href="/budgets">Manage</Link>
+                    <Link href="/budgets">{tr('Manage')}</Link>
                   </Button>
                 </div>
                 <div className="mt-4">
@@ -234,9 +258,9 @@ export function DashboardView() {
                   ) : s?.monthlyBudget ? (
                     <>
                       <p className="mb-3 text-2xl font-semibold tracking-tight tabular">
-                        {formatPercent(s.monthlyBudget.status.percentUsed)}
+                        {formatPercent(s.monthlyBudget.status.percentUsed, undefined, locale)}
                         <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                          used
+                          {tr('used')}{' '}
                         </span>
                       </p>
                       <BudgetProgress
@@ -247,7 +271,7 @@ export function DashboardView() {
                   ) : (
                     <Button asChild variant="outline" size="sm">
                       <Link href="/budgets">
-                        <Plus /> Create a monthly budget
+                        <Plus /> {tr('Create a monthly budget')}{' '}
                       </Link>
                     </Button>
                   )}
@@ -255,7 +279,7 @@ export function DashboardView() {
               </Card>
 
               <ChartCard
-                title="Spending trend"
+                title={tr('Spending trend')}
                 loading={trends.isLoading}
                 error={trends.isError}
                 onRetry={() => trends.refetch()}
@@ -268,7 +292,9 @@ export function DashboardView() {
 
           {breakdown.data && breakdown.data.items.length > 0 && (
             <Card className="p-5">
-              <p className="text-[15px] font-semibold tracking-tight">Top spending categories</p>
+              <p className="text-[15px] font-semibold tracking-tight">
+                {tr('Top spending categories')}
+              </p>
               <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {breakdown.data.items.slice(0, 3).map((item, index) => (
                   <li
@@ -276,7 +302,7 @@ export function DashboardView() {
                     className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3"
                   >
                     <span className="text-xs font-semibold text-muted-foreground tabular">
-                      {index + 1}
+                      {number(index + 1)}
                     </span>
                     <span
                       className="size-2.5 rounded-[3px]"
@@ -288,8 +314,13 @@ export function DashboardView() {
                         {item.category.name}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {item.transactionCount} transaction{item.transactionCount === 1 ? '' : 's'}{' '}
-                        · {formatPercent(item.percentage)}
+                        {tr(
+                          item.transactionCount === 1
+                            ? '{count} transaction'
+                            : '{count} transactions',
+                          { count: item.transactionCount },
+                        )}{' '}
+                        · {formatPercent(item.percentage, undefined, locale)}
                       </span>
                     </span>
                     <span className="text-sm font-semibold tabular">{money(item.total)}</span>

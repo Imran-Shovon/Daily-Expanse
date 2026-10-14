@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   PAYMENT_METHOD_LABELS,
@@ -72,10 +73,11 @@ export function TransactionTypeToggle({
   value: TransactionType;
   onChange: (value: TransactionType) => void;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <div
       role="radiogroup"
-      aria-label="Transaction type"
+      aria-label={tr('Transaction type')}
       className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
     >
       {(['EXPENSE', 'INCOME'] as const).map((type) => (
@@ -92,7 +94,7 @@ export function TransactionTypeToggle({
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          {type === 'EXPENSE' ? 'Expense' : 'Income'}
+          {type === 'EXPENSE' ? tr('Expense') : tr('Income')}
         </button>
       ))}
     </div>
@@ -114,6 +116,7 @@ export function TransactionForm({
   onSubmit: (input: TransactionInput) => Promise<unknown>;
   onCancel?: () => void;
 }) {
+  const { t: tr } = useLanguage();
   const user = useUser();
   const categories = useCategories();
   const form = useForm<TransactionFormValues>({
@@ -174,10 +177,10 @@ export function TransactionForm({
 
       <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
         <div className="space-y-1.5">
-          <Label htmlFor="tx-title">Title</Label>
+          <Label htmlFor="tx-title">{tr('Title')}</Label>
           <Input
             id="tx-title"
-            placeholder={type === 'EXPENSE' ? 'e.g. Weekly groceries' : 'e.g. Salary'}
+            placeholder={type === 'EXPENSE' ? tr('e.g. Weekly groceries') : tr('e.g. Salary')}
             autoFocus
             aria-invalid={!!formState.errors.title}
             {...register('title')}
@@ -185,7 +188,10 @@ export function TransactionForm({
           <FieldError message={formState.errors.title?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tx-amount">Amount ({user.currency})</Label>
+          <Label htmlFor="tx-amount">
+            {tr('Amount (')}
+            {user.currency})
+          </Label>
           <Input
             id="tx-amount"
             inputMode="decimal"
@@ -200,7 +206,7 @@ export function TransactionForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="tx-category">Category</Label>
+          <Label htmlFor="tx-category">{tr('Category')}</Label>
           <Controller
             control={control}
             name="categoryId"
@@ -212,7 +218,7 @@ export function TransactionForm({
               >
                 <SelectTrigger id="tx-category" aria-invalid={!!formState.errors.categoryId}>
                   <SelectValue
-                    placeholder={categories.isLoading ? 'Loading…' : 'Choose a category'}
+                    placeholder={categories.isLoading ? tr('Loading…') : tr('Choose a category')}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,7 +230,7 @@ export function TransactionForm({
                   ))}
                   {options.length === 0 && !categories.isLoading && (
                     <p className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No categories for this type yet.
+                      {tr('No categories for this type yet.')}{' '}
                     </p>
                   )}
                 </SelectContent>
@@ -234,7 +240,7 @@ export function TransactionForm({
           <FieldError message={formState.errors.categoryId?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tx-date">Date</Label>
+          <Label htmlFor="tx-date">{tr('Date')}</Label>
           <Input
             id="tx-date"
             type="date"
@@ -263,7 +269,7 @@ export function TransactionForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="tx-method">Payment method</Label>
+          <Label htmlFor="tx-method">{tr('Payment method')}</Label>
           <Controller
             control={control}
             name="paymentMethod"
@@ -275,7 +281,7 @@ export function TransactionForm({
                 <SelectContent>
                   {PAYMENT_METHODS.map((m) => (
                     <SelectItem key={m} value={m}>
-                      {PAYMENT_METHOD_LABELS[m]}
+                      {tr(PAYMENT_METHOD_LABELS[m])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -285,11 +291,12 @@ export function TransactionForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="tx-tags">
-            Tags <span className="font-normal text-muted-foreground">(optional)</span>
+            {tr('Tags')}{' '}
+            <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
           </Label>
           <Input
             id="tx-tags"
-            placeholder="family, weekly"
+            placeholder={tr('family, weekly')}
             aria-invalid={!!formState.errors.tags}
             {...register('tags')}
           />
@@ -299,12 +306,13 @@ export function TransactionForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="tx-notes">
-          Notes <span className="font-normal text-muted-foreground">(optional)</span>
+          {tr('Notes')}{' '}
+          <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
         </Label>
         <Textarea
           id="tx-notes"
           rows={2}
-          placeholder="Anything worth remembering"
+          placeholder={tr('Anything worth remembering')}
           {...register('notes')}
         />
         <FieldError message={formState.errors.notes?.message} />
@@ -313,13 +321,15 @@ export function TransactionForm({
       <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {tr('Cancel')}{' '}
           </Button>
         )}
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
           {submitLabel ??
-            (transaction ? 'Save changes' : `Add ${type === 'EXPENSE' ? 'expense' : 'income'}`)}
+            (transaction
+              ? tr('Save changes')
+              : tr('Add {v0}', { v0: tr(type === 'EXPENSE' ? 'expense' : 'income') }))}
         </Button>
       </div>
     </form>

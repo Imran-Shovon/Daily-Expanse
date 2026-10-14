@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { LogOut, Menu, Monitor, Moon, Plus, Settings, Sun } from 'lucide-react';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import * as React from 'react';
 import { toast } from 'sonner';
 import { useQuickAdd } from '@/components/transactions/transaction-dialog';
 import { Button } from '@/components/ui/button';
+import { LanguageToggle } from '@/components/common/language-toggle';
 import { Dialog, DialogTitle, SheetContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -25,6 +27,7 @@ import { Logo } from './logo';
 import { NAV_ITEMS } from './nav-items';
 
 function ThemeToggle() {
+  const { t: tr } = useLanguage();
   const { resolvedTheme } = useTheme();
   const { setUser } = useAuth();
   const user = useUser();
@@ -36,26 +39,26 @@ function ThemeToggle() {
       setUser(await usersApi.update({ theme }));
     } catch {
       setUser(previous);
-      toast.error('Could not save theme preference');
+      toast.error(tr('Could not save theme preference'));
     }
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Change theme">
+        <Button variant="ghost" size="icon" aria-label={tr('Change theme')}>
           {resolvedTheme === 'dark' ? <Moon /> : <Sun />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => choose('light')}>
-          <Sun /> Light
+          <Sun /> {tr('Light')}{' '}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => choose('dark')}>
-          <Moon /> Dark
+          <Moon /> {tr('Dark')}{' '}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => choose('system')}>
-          <Monitor /> System
+          <Monitor /> {tr('System')}{' '}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -63,6 +66,7 @@ function ThemeToggle() {
 }
 
 function UserMenu() {
+  const { t: tr } = useLanguage();
   const user = useUser();
   const { logout } = useAuth();
   return (
@@ -70,7 +74,7 @@ function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className="flex size-9 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground ring-offset-background outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          aria-label="Account menu"
+          aria-label={tr('Account menu')}
         >
           {initials(user.name)}
         </button>
@@ -83,11 +87,11 @@ function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/settings">
-            <Settings /> Settings
+            <Settings /> {tr('Settings')}{' '}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void logout()}>
-          <LogOut /> Sign out
+          <LogOut /> {tr('Sign out')}{' '}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -95,6 +99,7 @@ function UserMenu() {
 }
 
 export function AppHeader() {
+  const { t: tr } = useLanguage();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const pathname = usePathname();
   const quickAdd = useQuickAdd();
@@ -110,13 +115,13 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             className="-ml-2 lg:hidden"
-            aria-label="Open navigation"
+            aria-label={tr('Open navigation')}
             onClick={() => setMenuOpen(true)}
           >
             <Menu />
           </Button>
           <SheetContent aria-describedby={undefined}>
-            <DialogTitle className="sr-only">Navigation</DialogTitle>
+            <DialogTitle className="sr-only">{tr('Navigation')}</DialogTitle>
             <div className="px-5 pt-5 pb-6">
               <Logo />
             </div>
@@ -126,18 +131,19 @@ export function AppHeader() {
           </SheetContent>
         </Dialog>
 
-        <Link href="/dashboard" className="lg:hidden" aria-label="Daily Expense home">
+        <Link href="/dashboard" className="lg:hidden" aria-label={tr('Daily Expense home')}>
           <Logo showText={false} />
         </Link>
-        <p className="hidden text-sm text-muted-foreground lg:block">{current?.label}</p>
+        <p className="hidden text-sm text-muted-foreground lg:block">{tr(current?.label ?? '')}</p>
 
         <div className="ml-auto flex items-center gap-1.5">
           <Button size="sm" onClick={() => quickAdd()} className="gap-1.5">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Add transaction</span>
-            <span className="sm:hidden">Add</span>
+            <span className="hidden sm:inline">{tr('Add transaction')}</span>
+            <span className="sm:hidden">{tr('Add')}</span>
           </Button>
           <ThemeToggle />
+          <LanguageToggle />
           <UserMenu />
         </div>
       </div>

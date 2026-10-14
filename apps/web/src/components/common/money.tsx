@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { TransactionType } from '@expense/shared';
 import { useUser } from '@/lib/auth/auth-provider';
@@ -17,8 +18,9 @@ export function Money({
   compact?: boolean;
   className?: string;
 }) {
+  const { locale } = useLanguage();
   const { currency } = useUser();
-  const formatted = formatMoney(amount, currency, { compact });
+  const formatted = formatMoney(amount, currency, { compact }, locale);
   if (!type) return <span className={cn('tabular', className)}>{formatted}</span>;
   return (
     <span
@@ -35,10 +37,11 @@ export function Money({
 }
 
 export function useFormatters() {
+  const { locale } = useLanguage();
   const user = useUser();
   return {
     money: (amount: string | number, opts?: { compact?: boolean; signed?: boolean }) =>
-      formatMoney(amount, user.currency, opts),
+      formatMoney(amount, user.currency, opts, locale),
     currency: user.currency,
     dateFormat: user.dateFormat,
     timezone: user.timezone,

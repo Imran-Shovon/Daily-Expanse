@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { PAYMENT_METHOD_LABELS, type Transaction } from '@expense/shared';
 import {
@@ -56,7 +57,8 @@ function SortHeader({
   onSort?: (s: SortState) => void;
   className?: string;
 }) {
-  if (!sort || !onSort) return <TableHead className={className}>{label}</TableHead>;
+  const { t: tr } = useLanguage();
+  if (!sort || !onSort) return <TableHead className={className}>{tr(label)}</TableHead>;
   const active = sort.sortBy === field;
   const Icon = !active ? ArrowUpDown : sort.sortOrder === 'asc' ? ArrowUp : ArrowDown;
   return (
@@ -74,7 +76,7 @@ function SortHeader({
           onSort({ sortBy: field, sortOrder: active && sort.sortOrder === 'desc' ? 'asc' : 'desc' })
         }
       >
-        {label}
+        {tr(label)}
         <Icon className="size-3" />
       </button>
     </TableHead>
@@ -90,13 +92,14 @@ function RowActions({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Actions for ${transaction.title}`}
+          aria-label={tr('Actions for {v0}', { v0: transaction.title })}
           onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal />
@@ -104,11 +107,11 @@ function RowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onSelect={onEdit}>
-          <Pencil /> Edit
+          <Pencil /> {tr('Edit')}{' '}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive onSelect={onDelete}>
-          <Trash2 /> Delete
+          <Trash2 /> {tr('Delete')}{' '}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -130,6 +133,7 @@ export function TransactionTable({
   onSort?: (s: SortState) => void;
   compact?: boolean;
 }) {
+  const { t: tr } = useLanguage();
   const router = useRouter();
   const [editing, setEditing] = React.useState<Transaction | null>(null);
   const [deleting, setDeleting] = React.useState<Transaction | null>(null);
@@ -154,7 +158,7 @@ export function TransactionTable({
                   {t.recurringTransactionId && (
                     <Repeat
                       className="size-3 shrink-0 text-muted-foreground"
-                      aria-label="Recurring"
+                      aria-label={tr('Recurring')}
                     />
                   )}
                 </p>
@@ -181,19 +185,19 @@ export function TransactionTable({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <SortHeader field="title" label="Transaction" sort={sort} onSort={onSort} />
-                <TableHead>Category</TableHead>
-                <SortHeader field="date" label="Date" sort={sort} onSort={onSort} />
-                <TableHead className="hidden lg:table-cell">Method</TableHead>
+                <SortHeader field="title" label={tr('Transaction')} sort={sort} onSort={onSort} />
+                <TableHead>{tr('Category')}</TableHead>
+                <SortHeader field="date" label={tr('Date')} sort={sort} onSort={onSort} />
+                <TableHead className="hidden lg:table-cell">{tr('Method')}</TableHead>
                 <SortHeader
                   field="amount"
-                  label="Amount"
+                  label={tr('Amount')}
                   sort={sort}
                   onSort={onSort}
                   className="text-right"
                 />
                 <TableHead className="w-12">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{tr('Actions')}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -204,10 +208,10 @@ export function TransactionTable({
                   className="cursor-pointer"
                   onClick={() => open(t)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') open(t);
+                    if (e.key === tr('Enter')) open(t);
                   }}
                   tabIndex={0}
-                  aria-label={`${t.title}, open details`}
+                  aria-label={tr('{v0}, open details', { v0: t.title })}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -218,7 +222,7 @@ export function TransactionTable({
                           {t.recurringTransactionId && (
                             <Repeat
                               className="size-3 shrink-0 text-muted-foreground"
-                              aria-label="Recurring"
+                              aria-label={tr('Recurring')}
                             />
                           )}
                         </p>
@@ -237,7 +241,7 @@ export function TransactionTable({
                     <FormattedDate date={t.date} />
                   </TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground lg:table-cell">
-                    {PAYMENT_METHOD_LABELS[t.paymentMethod]}
+                    {tr(PAYMENT_METHOD_LABELS[t.paymentMethod])}
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <Money amount={t.amount} type={t.type} />
@@ -264,12 +268,12 @@ export function TransactionTable({
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
-        title="Delete this transaction?"
+        title={tr('Delete this transaction?')}
         description={
           deleting && (
             <>
-              <span className="font-medium text-foreground">{deleting.title}</span> will be removed
-              permanently and your totals and budgets will update.
+              <span className="font-medium text-foreground">{deleting.title}</span>{' '}
+              {tr('will be removed permanently and your totals and budgets will update.')}
             </>
           )
         }

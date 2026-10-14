@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -7,9 +8,10 @@ import { Logo } from './logo';
 import { NAV_ITEMS } from './nav-items';
 
 export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { t: tr } = useLanguage();
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="flex flex-col gap-0.5">
+    <nav aria-label={tr('Main')} className="flex flex-col gap-0.5">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
@@ -32,7 +34,7 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               )}
               strokeWidth={active ? 2.2 : 1.9}
             />
-            {label}
+            {tr(label)}
           </Link>
         );
       })}
@@ -41,20 +43,25 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AppSidebar() {
+  const { t: tr } = useLanguage();
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-5 lg:flex">
-      <Link href="/dashboard" className="mb-7 px-2 outline-none" aria-label="Daily Expense home">
+      <Link
+        href="/dashboard"
+        className="mb-7 px-2 outline-none"
+        aria-label={tr('Daily Expense home')}
+      >
         <Logo />
       </Link>
       <NavLinks />
       <div className="mt-auto rounded-xl border bg-card/70 p-3.5 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">Tip</p>
+        <p className="font-medium text-foreground">{tr('Tip')}</p>
         <p className="mt-1 leading-relaxed">
-          Press{' '}
+          {tr('Press')}{' '}
           <kbd className="rounded border bg-muted px-1 font-mono text-[11px] text-foreground">
             N
           </kbd>{' '}
-          anywhere to add a transaction.
+          {tr('anywhere to add a transaction.')}{' '}
         </p>
       </div>
     </aside>

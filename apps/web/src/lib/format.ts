@@ -9,11 +9,12 @@ export function formatMoney(
   amount: string | number,
   currency: string,
   opts: { compact?: boolean; signed?: boolean } = {},
+  locale?: string,
 ): string {
   const value = typeof amount === 'number' ? amount : Number(amount);
   const safe = Number.isFinite(value) ? value : 0;
   try {
-    const formatted = new Intl.NumberFormat(undefined, {
+    const formatted = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       notation: opts.compact ? 'compact' : 'standard',
@@ -28,16 +29,25 @@ export function formatMoney(
 }
 
 /** Formats an ISO calendar date (YYYY-MM-DD) with a user date-format pattern. */
-export function formatDate(isoDate: string, pattern: string = 'MMM d, yyyy'): string {
+export function formatDate(
+  isoDate: string,
+  pattern: string = 'MMM d, yyyy',
+  locale?: string,
+): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
   if (!match) return isoDate;
   const [, y, m, d] = match;
   const monthIndex = Number(m) - 1;
-  return pattern.replace(/yyyy|MMM|MM|dd|d/g, (token) => {
+  const formatted = pattern.replace(/yyyy|MMM|MM|dd|d/g, (token) => {
     switch (token) {
       case 'yyyy':
         return y;
       case 'MMM':
+        if (locale?.startsWith('bn') && monthIndex >= 0 && monthIndex < 12) {
+          return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(
+            new Date(Date.UTC(2024, monthIndex, 1)),
+          );
+        }
         return MONTHS[monthIndex] ?? m;
       case 'MM':
         return m;
@@ -49,11 +59,21 @@ export function formatDate(isoDate: string, pattern: string = 'MMM d, yyyy'): st
         return token;
     }
   });
+  return locale?.startsWith('bn')
+    ? formatted.replace(/\d/g, (digit) => '০১২৩৪৫৬৭৮৯'[Number(digit)]!)
+    : formatted;
 }
 
-export function formatPercent(value: number | null | undefined, digits = 1): string {
+export function formatPercent(
+  value: number | null | undefined,
+  digits = 1,
+  locale?: string,
+): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—';
-  return `${value.toFixed(digits).replace(/\.0+$/, '')}%`;
+  const formatted = `${value.toFixed(digits).replace(/\.0+$/, '')}%`;
+  return locale?.startsWith('bn')
+    ? formatted.replace(/\d/g, (digit) => '০১২৩৪৫৬৭৮৯'[Number(digit)]!)
+    : formatted;
 }
 
 /** Today's ISO date in the given IANA time zone. */

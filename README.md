@@ -2,6 +2,8 @@
 
 A full-stack personal finance app: track income and expenses, set budgets, automate recurring transactions and explore reports. Each user only ever sees their own data.
 
+Use the বাংলা / English button beside the theme control to switch the interface language, including dates, amounts and reports. The preference is saved in your browser and is also available on sign-in pages. Names, notes and other user-entered content stay as entered.
+
 | Layer | Stack |
 | --- | --- |
 | Frontend (`apps/web`) | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui-style components on Radix, TanStack Query, React Hook Form + Zod, Recharts, Lucide |

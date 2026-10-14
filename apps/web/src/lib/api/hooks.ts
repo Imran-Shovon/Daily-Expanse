@@ -9,6 +9,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useLanguage } from '@/lib/i18n/language-provider';
 import { ApiError } from './client';
 import {
   budgetsApi,
@@ -70,6 +71,7 @@ function useFinancialMutation<TVars, TResult>(
   fn: (vars: TVars) => Promise<TResult>,
   messages: { success?: string | ((result: TResult) => string); error?: string } = {},
 ) {
+  const { t: tr } = useLanguage();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: fn,
@@ -77,13 +79,15 @@ function useFinancialMutation<TVars, TResult>(
       void invalidateFinancialData(queryClient);
       if (messages.success) {
         toast.success(
-          typeof messages.success === 'function' ? messages.success(result) : messages.success,
+          tr(typeof messages.success === 'function' ? messages.success(result) : messages.success),
         );
       }
     },
     onError: (error) => {
       // Validation errors are shown inline on the form; still surface a toast for context.
-      toast.error(messages.error ?? 'Could not save changes', { description: errorMessage(error) });
+      toast.error(tr(messages.error ?? 'Could not save changes'), {
+        description: tr(errorMessage(error)),
+      });
     },
   });
 }
@@ -103,8 +107,13 @@ export function useTransaction(id: string) {
 }
 
 export function useCreateTransaction() {
+  const { t: tr } = useLanguage();
   return useFinancialMutation((input: TransactionInput) => transactionsApi.create(input), {
-    success: (t) => `${t.type === 'INCOME' ? 'Income' : 'Expense'} "${t.title}" added`,
+    success: (t) =>
+      tr('{type} "{title}" added', {
+        type: tr(t.type === 'INCOME' ? 'Income' : 'Expense'),
+        title: t.title,
+      }),
     error: 'Could not add transaction',
   });
 }
@@ -135,21 +144,26 @@ export function useCategories() {
 }
 
 export function useSaveCategory() {
+  const { t: tr } = useLanguage();
   return useFinancialMutation(
     ({ id, input }: { id?: string; input: CategoryInput }) =>
       id ? categoriesApi.update(id, input) : categoriesApi.create(input),
-    { success: (c) => `Category "${c.name}" saved`, error: 'Could not save category' },
+    {
+      success: (c) => tr('Category "{name}" saved', { name: c.name }),
+      error: 'Could not save category',
+    },
   );
 }
 
 export function useDeleteCategory() {
+  const { t: tr } = useLanguage();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reassignTo }: { id: string; reassignTo?: string }) =>
       categoriesApi.remove(id, reassignTo),
     onSuccess: () => {
       void invalidateFinancialData(queryClient);
-      toast.success('Category deleted');
+      toast.success(tr('Category deleted'));
     },
   });
 }
@@ -240,13 +254,14 @@ export function useRecurringExecutions(id: string | null) {
 }
 
 export function useSaveRecurring() {
+  const { t: tr } = useLanguage();
   return useFinancialMutation(
     ({ id, input }: { id?: string; input: RecurringInput }) =>
       id ? recurringApi.update(id, input) : recurringApi.create(input),
     {
       success: (r) =>
         r.executionCount > 0
-          ? `Schedule saved · ${r.executionCount} transaction(s) generated`
+          ? tr('Schedule saved · {count} transaction(s) generated', { count: r.executionCount })
           : 'Schedule saved',
       error: 'Could not save schedule',
     },
@@ -254,11 +269,15 @@ export function useSaveRecurring() {
 }
 
 export function useToggleRecurring() {
+  const { t: tr } = useLanguage();
   return useFinancialMutation(
     ({ id, active }: { id: string; active: boolean }) =>
       active ? recurringApi.resume(id) : recurringApi.pause(id),
     {
-      success: (r) => (r.isActive ? `"${r.title}" resumed` : `"${r.title}" paused`),
+      success: (r) =>
+        r.isActive
+          ? tr('"{title}" resumed', { title: r.title })
+          : tr('"{title}" paused', { title: r.title }),
       error: 'Could not update schedule',
     },
   );

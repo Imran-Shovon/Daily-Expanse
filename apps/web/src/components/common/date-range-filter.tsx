@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   DATE_RANGE_PRESET_LABELS,
@@ -71,12 +72,12 @@ export function useDateRangeParams(options?: {
   return [value, setValue];
 }
 
-export function rangeLabel(value: RangeParams | null, dateFormat: string) {
+export function rangeLabel(value: RangeParams | null, dateFormat: string, locale?: string) {
   if (!value) return 'All dates';
   if (value.range === 'custom' && value.from && value.to) {
     return value.from === value.to
-      ? formatDate(value.from, dateFormat)
-      : `${formatDate(value.from, dateFormat)} – ${formatDate(value.to, dateFormat)}`;
+      ? formatDate(value.from, dateFormat, locale)
+      : `${formatDate(value.from, dateFormat, locale)} – ${formatDate(value.to, dateFormat, locale)}`;
   }
   return DATE_RANGE_PRESET_LABELS[value.range];
 }
@@ -92,6 +93,7 @@ export function DateRangeFilter({
   allowAll?: boolean;
   className?: string;
 }) {
+  const { t: tr, locale } = useLanguage();
   const user = useUser();
   const [open, setOpen] = React.useState(false);
   const today = todayIn(user.timezone);
@@ -113,10 +115,10 @@ export function DateRangeFilter({
         <Button
           variant="outline"
           className={cn('justify-between gap-2 font-normal', className)}
-          aria-label="Date range"
+          aria-label={tr('Date range')}
         >
           <CalendarDays className="text-muted-foreground" />
-          <span className="truncate">{rangeLabel(value, user.dateFormat)}</span>
+          <span className="truncate">{tr(rangeLabel(value, user.dateFormat, locale))}</span>
           <ChevronDown className="ml-1 text-muted-foreground" />
         </Button>
       </PopoverPrimitive.Trigger>
@@ -126,7 +128,7 @@ export function DateRangeFilter({
           sideOffset={6}
           className="z-50 w-72 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
         >
-          <div role="listbox" aria-label="Preset ranges">
+          <div role="listbox" aria-label={tr('Preset ranges')}>
             {allowAll && (
               <button
                 role="option"
@@ -140,7 +142,7 @@ export function DateRangeFilter({
                   setOpen(false);
                 }}
               >
-                All dates
+                {tr('All dates')}{' '}
                 {value === null && <Check className="size-4 text-primary" strokeWidth={2.5} />}
               </button>
             )}
@@ -160,7 +162,7 @@ export function DateRangeFilter({
                     setOpen(false);
                   }}
                 >
-                  {DATE_RANGE_PRESET_LABELS[preset]}
+                  {tr(DATE_RANGE_PRESET_LABELS[preset])}
                   {selected && <Check className="size-4 text-primary" strokeWidth={2.5} />}
                 </button>
               );
@@ -175,11 +177,11 @@ export function DateRangeFilter({
               setOpen(false);
             }}
           >
-            <p className="text-xs font-medium text-muted-foreground">Custom range</p>
+            <p className="text-xs font-medium text-muted-foreground">{tr('Custom range')}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label htmlFor="range-from" className="text-xs">
-                  From
+                  {tr('From')}{' '}
                 </Label>
                 <Input
                   id="range-from"
@@ -192,7 +194,7 @@ export function DateRangeFilter({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="range-to" className="text-xs">
-                  To
+                  {tr('To')}{' '}
                 </Label>
                 <Input
                   id="range-to"
@@ -205,10 +207,12 @@ export function DateRangeFilter({
               </div>
             </div>
             {from && to && from > to && (
-              <p className="text-xs text-destructive">Start date must be before end date.</p>
+              <p className="text-xs text-destructive">
+                {tr('Start date must be before end date.')}
+              </p>
             )}
             <Button type="submit" size="sm" className="w-full" disabled={invalid}>
-              Apply range
+              {tr('Apply range')}{' '}
             </Button>
           </form>
         </PopoverPrimitive.Content>

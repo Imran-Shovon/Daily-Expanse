@@ -1,3 +1,6 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language-provider';
 import { AlertCircle, type LucideIcon } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -40,6 +43,7 @@ export function ErrorState({
   onRetry?: () => void;
   className?: string;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <div
       role="alert"
@@ -48,10 +52,10 @@ export function ErrorState({
       <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
         <AlertCircle className="size-5" />
       </div>
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-sm text-muted-foreground">{tr(message)}</p>
       {onRetry && (
         <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
-          Try again
+          {tr('Try again')}{' '}
         </Button>
       )}
     </div>
@@ -66,6 +70,7 @@ export function LoadingSkeleton({
   variant: 'table' | 'cards' | 'chart' | 'list';
   rows?: number;
 }) {
+  const { t: tr } = useLanguage();
   if (variant === 'cards') {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -89,7 +94,7 @@ export function LoadingSkeleton({
     );
   }
   return (
-    <div className="divide-y" aria-busy="true" aria-label="Loading">
+    <div className="divide-y" aria-busy="true" aria-label={tr('Loading')}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-5 py-3.5">
           <Skeleton className="size-9 rounded-lg" />

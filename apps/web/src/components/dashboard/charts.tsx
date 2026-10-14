@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { CategoryBreakdownItem, TrendPoint } from '@expense/shared';
 import {
@@ -17,6 +18,7 @@ import {
 } from 'recharts';
 import { useFormatters } from '@/components/common/money';
 import { formatPercent } from '@/lib/format';
+import { localizePeriodLabel, type Language } from '@/lib/i18n/translate';
 import { ChartLegend } from './chart-card';
 
 const INCOME = 'var(--chart-income)';
@@ -64,10 +66,11 @@ function TooltipBox({ title, rows }: { title: string; rows: TooltipRow[] }) {
 
 type ChartDatum = TrendPoint & { incomeValue: number; expenseValue: number; netValue: number };
 
-function toChartData(points: TrendPoint[]): ChartDatum[] {
+function toChartData(points: TrendPoint[], language: Language): ChartDatum[] {
   // Numbers are only used for plotting; displayed values come from the decimal strings.
   return points.map((p) => ({
     ...p,
+    label: localizePeriodLabel(p.label, language),
     incomeValue: Number(p.income),
     expenseValue: Number(p.expenses),
     netValue: Number(p.net),
@@ -86,20 +89,21 @@ export function IncomeExpenseChart({
   points: TrendPoint[];
   height?: number;
 }) {
+  const { t: tr, language } = useLanguage();
   const { money } = useFormatters();
-  const data = toChartData(points);
+  const data = toChartData(points, language);
   return (
     <div className="space-y-3">
       <ChartLegend
         items={[
-          { label: 'Income', color: INCOME },
-          { label: 'Expenses', color: EXPENSE },
+          { label: tr('Income'), color: INCOME },
+          { label: tr('Expenses'), color: EXPENSE },
         ]}
       />
       <div
         style={{ height }}
         role="img"
-        aria-label="Bar chart comparing income and expenses over time"
+        aria-label={tr('Bar chart comparing income and expenses over time')}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -129,9 +133,9 @@ export function IncomeExpenseChart({
                   <TooltipBox
                     title={d.label}
                     rows={[
-                      { label: 'Income', color: INCOME, value: money(d.income) },
-                      { label: 'Expenses', color: EXPENSE, value: money(d.expenses) },
-                      { label: 'Net', color: NET, value: money(d.net, { signed: true }) },
+                      { label: tr('Income'), color: INCOME, value: money(d.income) },
+                      { label: tr('Expenses'), color: EXPENSE, value: money(d.expenses) },
+                      { label: tr('Net'), color: NET, value: money(d.net, { signed: true }) },
                     ]}
                   />
                 );
@@ -139,14 +143,14 @@ export function IncomeExpenseChart({
             />
             <Bar
               dataKey="incomeValue"
-              name="Income"
+              name={tr('Income')}
               fill={INCOME}
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
             />
             <Bar
               dataKey="expenseValue"
-              name="Expenses"
+              name={tr('Expenses')}
               fill={EXPENSE}
               radius={[4, 4, 0, 0]}
               maxBarSize={28}
@@ -165,10 +169,11 @@ export function SpendingTrendChart({
   points: TrendPoint[];
   height?: number;
 }) {
+  const { t: tr, language } = useLanguage();
   const { money } = useFormatters();
-  const data = toChartData(points);
+  const data = toChartData(points, language);
   return (
-    <div style={{ height }} role="img" aria-label="Area chart of spending over time">
+    <div style={{ height }} role="img" aria-label={tr('Area chart of spending over time')}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
           <defs>
@@ -197,7 +202,7 @@ export function SpendingTrendChart({
               return (
                 <TooltipBox
                   title={d.label}
-                  rows={[{ label: 'Spent', color: EXPENSE, value: money(d.expenses) }]}
+                  rows={[{ label: tr('Spent'), color: EXPENSE, value: money(d.expenses) }]}
                 />
               );
             }}
@@ -225,10 +230,11 @@ export function NetSavingsChart({
   points: TrendPoint[];
   height?: number;
 }) {
+  const { t: tr, language } = useLanguage();
   const { money } = useFormatters();
-  const data = toChartData(points);
+  const data = toChartData(points, language);
   return (
-    <div style={{ height }} role="img" aria-label="Bar chart of net savings per period">
+    <div style={{ height }} role="img" aria-label={tr('Bar chart of net savings per period')}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke={GRID} />
@@ -252,7 +258,7 @@ export function NetSavingsChart({
                 <TooltipBox
                   title={d.label}
                   rows={[
-                    { label: 'Net savings', color: NET, value: money(d.net, { signed: true }) },
+                    { label: tr('Net savings'), color: NET, value: money(d.net, { signed: true }) },
                   ]}
                 />
               );
@@ -282,6 +288,7 @@ export function CategoryDonut({
   total: string;
   limit?: number;
 }) {
+  const { t: tr, locale } = useLanguage();
   const { money } = useFormatters();
   const top = items.slice(0, limit);
   const rest = items.slice(limit);
@@ -299,7 +306,7 @@ export function CategoryDonut({
       ? [
           {
             key: 'other',
-            name: `Other (${rest.length})`,
+            name: tr('Other ({v0})', { v0: rest.length }),
             color: 'var(--chart-axis)',
             value: restTotal,
             display: restTotal.toFixed(2),
@@ -315,7 +322,7 @@ export function CategoryDonut({
         <div
           className="relative mx-auto size-[180px]"
           role="img"
-          aria-label="Donut chart of spending by category"
+          aria-label={tr('Donut chart of spending by category')}
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -342,7 +349,11 @@ export function CategoryDonut({
                     <TooltipBox
                       title={s.name}
                       rows={[
-                        { label: formatPercent(s.pct), color: s.color, value: money(s.display) },
+                        {
+                          label: formatPercent(s.pct, undefined, locale),
+                          color: s.color,
+                          value: money(s.display),
+                        },
                       ]}
                     />
                   );
@@ -351,7 +362,7 @@ export function CategoryDonut({
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[11px] text-muted-foreground">Total</span>
+            <span className="text-[11px] text-muted-foreground">{tr('Total')}</span>
             <span className="text-sm font-semibold tabular">
               {money(total, { compact: Number(total) >= 100_000 })}
             </span>
@@ -366,7 +377,9 @@ export function CategoryDonut({
                 aria-hidden
               />
               <span className="min-w-0 flex-1 truncate">{s.name}</span>
-              <span className="text-xs text-muted-foreground tabular">{formatPercent(s.pct)}</span>
+              <span className="text-xs text-muted-foreground tabular">
+                {formatPercent(s.pct, undefined, locale)}
+              </span>
               <span className="shrink-0 text-right font-medium tabular">{money(s.display)}</span>
             </li>
           ))}

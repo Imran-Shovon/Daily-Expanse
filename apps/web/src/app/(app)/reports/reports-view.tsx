@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { ReportGranularity } from '@expense/shared';
 import { Download, Loader2 } from 'lucide-react';
@@ -37,6 +38,7 @@ import {
   useTransactionReport,
 } from '@/lib/api/hooks';
 import { formatPercent } from '@/lib/format';
+import { localizePeriodLabel } from '@/lib/i18n/translate';
 import { cn } from '@/lib/utils';
 
 const GRANULARITIES: { value: ReportGranularity; label: string }[] = [
@@ -57,9 +59,10 @@ function Kpi({
   sub?: React.ReactNode;
   loading?: boolean;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <div className="bg-card px-5 py-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{tr(label)}</p>
       {loading ? (
         <Skeleton className="mt-2 h-6 w-24" />
       ) : (
@@ -71,6 +74,7 @@ function Kpi({
 }
 
 export function ReportsView() {
+  const { t: tr, locale, language } = useLanguage();
   const { money } = useFormatters();
   const [range, setRange] = useDateRangeParams();
   const [granularity, setGranularity] = React.useState<ReportGranularity | undefined>(undefined);
@@ -88,9 +92,9 @@ export function ReportsView() {
     setExporting(true);
     try {
       const filename = await reportsApi.exportCsv(range);
-      toast.success(`Downloaded ${filename}`);
+      toast.success(tr('Downloaded {v0}', { v0: filename }));
     } catch (e) {
-      toast.error('Export failed', { description: errorMessage(e) });
+      toast.error(tr('Export failed'), { description: tr(errorMessage(e)) });
     } finally {
       setExporting(false);
     }
@@ -99,23 +103,24 @@ export function ReportsView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reports"
-        description="Understand trends across days, weeks, months and years."
+        title={tr('Reports')}
+        description={tr('Understand trends across days, weeks, months and years.')}
         actions={
           <>
             <DateRangeFilter value={range} onChange={(r) => r && setRange(r)} />
             <Button variant="outline" onClick={exportCsv} disabled={exporting}>
-              {exporting ? <Loader2 className="animate-spin" /> : <Download />} Export CSV
+              {exporting ? <Loader2 className="animate-spin" /> : <Download />}{' '}
+              {tr('Export CSV')}{' '}
             </Button>
           </>
         }
       />
 
       <Card className="grid grid-cols-2 gap-px overflow-hidden bg-border lg:grid-cols-5 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
-        <Kpi label="Income" loading={!totals} value={totals && money(totals.income)} />
-        <Kpi label="Expenses" loading={!totals} value={totals && money(totals.expenses)} />
+        <Kpi label={tr('Income')} loading={!totals} value={totals && money(totals.income)} />
+        <Kpi label={tr('Expenses')} loading={!totals} value={totals && money(totals.expenses)} />
         <Kpi
-          label="Net savings"
+          label={tr('Net savings')}
           loading={!totals}
           value={
             totals && (
@@ -126,16 +131,21 @@ export function ReportsView() {
           }
         />
         <Kpi
-          label="Savings rate"
+          label={tr('Savings rate')}
           loading={!totals}
-          value={totals && formatPercent(totals.savingsRate)}
-          sub={totals?.savingsRate === null ? 'No income in range' : undefined}
+          value={totals && formatPercent(totals.savingsRate, undefined, locale)}
+          sub={totals?.savingsRate === null ? tr('No income in range') : undefined}
         />
         <Kpi
-          label="Avg. daily spend"
+          label={tr('Avg. daily spend')}
           loading={!report.data}
           value={report.data && money(report.data.averageDailyExpense)}
-          sub={report.data && `${report.data.totals.count} transactions`}
+          sub={
+            report.data &&
+            tr(report.data.totals.count === 1 ? '{count} transaction' : '{count} transactions', {
+              count: report.data.totals.count,
+            })
+          }
         />
       </Card>
 
@@ -144,17 +154,17 @@ export function ReportsView() {
           value={activeGranularity}
           onValueChange={(v) => setGranularity(v as ReportGranularity)}
         >
-          <TabsList aria-label="Report granularity">
+          <TabsList aria-label={tr('Report granularity')}>
             {GRANULARITIES.map((g) => (
               <TabsTrigger key={g.value} value={g.value}>
-                {g.label}
+                {tr(g.label)}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
         {granularity && (
           <Button variant="ghost" size="sm" onClick={() => setGranularity(undefined)}>
-            Auto granularity
+            {tr('Auto granularity')}{' '}
           </Button>
         )}
       </div>
@@ -163,16 +173,16 @@ export function ReportsView() {
         <Card>
           <EmptyState
             icon={Download}
-            title="Nothing to report for this period"
-            description="Pick another date range or add transactions to see reports."
+            title={tr('Nothing to report for this period')}
+            description={tr('Pick another date range or add transactions to see reports.')}
           />
         </Card>
       ) : (
         <>
           <div className="grid gap-4 xl:grid-cols-2">
             <ChartCard
-              title="Expense report"
-              description="Total spending per period"
+              title={tr('Expense report')}
+              description={tr('Total spending per period')}
               loading={report.isLoading}
               error={report.isError}
               onRetry={() => report.refetch()}
@@ -180,7 +190,7 @@ export function ReportsView() {
               {report.data && <SpendingTrendChart points={report.data.periods} height={260} />}
             </ChartCard>
             <ChartCard
-              title="Income vs expenses"
+              title={tr('Income vs expenses')}
               loading={incomeExpense.isLoading}
               error={incomeExpense.isError}
               onRetry={() => incomeExpense.refetch()}
@@ -193,10 +203,14 @@ export function ReportsView() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <ChartCard
-              title="Savings trend"
+              title={tr('Savings trend')}
               description={
                 incomeExpense.data &&
-                `Saved ${money(incomeExpense.data.points.at(-1)?.cumulativeNet ?? '0', { signed: true })} in total across this range`
+                tr('Saved {v0} in total across this range', {
+                  v0: money(incomeExpense.data.points.at(-1)?.cumulativeNet ?? '0', {
+                    signed: true,
+                  }),
+                })
               }
               loading={incomeExpense.isLoading}
               error={incomeExpense.isError}
@@ -207,7 +221,7 @@ export function ReportsView() {
               )}
             </ChartCard>
             <ChartCard
-              title="Expenses by category"
+              title={tr('Expenses by category')}
               loading={expenseBreakdown.isLoading}
               error={expenseBreakdown.isError}
               onRetry={() => expenseBreakdown.refetch()}
@@ -221,7 +235,7 @@ export function ReportsView() {
                   />
                 ) : (
                   <p className="py-10 text-center text-sm text-muted-foreground">
-                    No expenses in this range.
+                    {tr('No expenses in this range.')}{' '}
                   </p>
                 ))}
             </ChartCard>
@@ -230,9 +244,11 @@ export function ReportsView() {
           <div className="grid gap-4 xl:grid-cols-5">
             <Card className="xl:col-span-3">
               <div className="px-5 pt-5 pb-3">
-                <h3 className="text-[15px] font-semibold tracking-tight">Largest expenses</h3>
+                <h3 className="text-[15px] font-semibold tracking-tight">
+                  {tr('Largest expenses')}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  The ten biggest outgoing transactions in this range
+                  {tr('The ten biggest outgoing transactions in this range')}{' '}
                 </p>
               </div>
               {report.isLoading ? (
@@ -264,12 +280,12 @@ export function ReportsView() {
                 </ol>
               ) : (
                 <p className="px-5 pb-6 text-sm text-muted-foreground">
-                  No expenses in this range.
+                  {tr('No expenses in this range.')}{' '}
                 </p>
               )}
             </Card>
             <ChartCard
-              title="Income sources"
+              title={tr('Income sources')}
               className="xl:col-span-2"
               loading={incomeBreakdown.isLoading}
               error={incomeBreakdown.isError}
@@ -305,7 +321,7 @@ export function ReportsView() {
                   </ul>
                 ) : (
                   <p className="py-10 text-center text-sm text-muted-foreground">
-                    No income in this range.
+                    {tr('No income in this range.')}{' '}
                   </p>
                 ))}
             </ChartCard>
@@ -314,24 +330,32 @@ export function ReportsView() {
           {incomeExpense.data && (
             <Card>
               <div className="px-5 pt-5 pb-3">
-                <h3 className="text-[15px] font-semibold tracking-tight">Period breakdown</h3>
-                <p className="text-sm text-muted-foreground">The numbers behind the charts above</p>
+                <h3 className="text-[15px] font-semibold tracking-tight">
+                  {tr('Period breakdown')}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {tr('The numbers behind the charts above')}
+                </p>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>Period</TableHead>
-                    <TableHead className="text-right">Income</TableHead>
-                    <TableHead className="text-right">Expenses</TableHead>
-                    <TableHead className="text-right">Net</TableHead>
-                    <TableHead className="text-right">Savings rate</TableHead>
-                    <TableHead className="hidden text-right sm:table-cell">Cumulative</TableHead>
+                    <TableHead>{tr('Period')}</TableHead>
+                    <TableHead className="text-right">{tr('Income')}</TableHead>
+                    <TableHead className="text-right">{tr('Expenses')}</TableHead>
+                    <TableHead className="text-right">{tr('Net')}</TableHead>
+                    <TableHead className="text-right">{tr('Savings rate')}</TableHead>
+                    <TableHead className="hidden text-right sm:table-cell">
+                      {tr('Cumulative')}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {incomeExpense.data.points.map((p) => (
                     <TableRow key={p.date}>
-                      <TableCell className="font-medium whitespace-nowrap">{p.label}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {localizePeriodLabel(p.label, language)}
+                      </TableCell>
                       <TableCell className="text-right tabular">{money(p.income)}</TableCell>
                       <TableCell className="text-right tabular">{money(p.expenses)}</TableCell>
                       <TableCell
@@ -343,7 +367,7 @@ export function ReportsView() {
                         {money(p.net, { signed: true })}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground tabular">
-                        {formatPercent(p.savingsRate)}
+                        {formatPercent(p.savingsRate, undefined, locale)}
                       </TableCell>
                       <TableCell className="hidden text-right tabular sm:table-cell">
                         {money(p.cumulativeNet)}

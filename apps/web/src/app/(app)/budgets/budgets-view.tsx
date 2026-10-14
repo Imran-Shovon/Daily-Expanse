@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { BUDGET_PERIOD_LABELS, type Budget } from '@expense/shared';
 import {
@@ -42,29 +43,31 @@ function BudgetMenu({
   onDelete: () => void;
   label: string;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${label}`}>
+        <Button variant="ghost" size="icon-sm" aria-label={tr('Actions for {v0}', { v0: label })}>
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onEdit}>
-          <Pencil /> Edit
+          <Pencil /> {tr('Edit')}{' '}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive onSelect={onDelete}>
-          <Trash2 /> Delete
+          <Trash2 /> {tr('Delete')}{' '}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-const budgetName = (b: Budget) => b.name ?? b.category?.name ?? 'Overall budget';
+const budgetName = (b: Budget) => b.name ?? b.category?.name ?? '';
 
 export function BudgetsView() {
+  const { t: tr, locale } = useLanguage();
   const query = useBudgets();
   const remove = useDeleteBudget();
   const { money } = useFormatters();
@@ -86,11 +89,11 @@ export function BudgetsView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Budgets"
-        description="Set spending limits and see how much room is left in each period."
+        title={tr('Budgets')}
+        description={tr('Set spending limits and see how much room is left in each period.')}
         actions={
           <Button onClick={() => setDialog({ open: true })}>
-            <Plus /> New budget
+            <Plus /> {tr('New budget')}{' '}
           </Button>
         }
       />
@@ -113,11 +116,13 @@ export function BudgetsView() {
         <Card>
           <EmptyState
             icon={PiggyBank}
-            title="No budgets yet"
-            description="Create an overall monthly budget, or limits for categories like groceries and eating out. You'll get a warning at 80%."
+            title={tr('No budgets yet')}
+            description={tr(
+              "Create an overall monthly budget, or limits for categories like groceries and eating out. You'll get a warning at 80%.",
+            )}
             action={
               <Button onClick={() => setDialog({ open: true })}>
-                <Plus /> Create your first budget
+                <Plus /> {tr('Create your first budget')}{' '}
               </Button>
             }
           />
@@ -133,13 +138,14 @@ export function BudgetsView() {
                     <div className="flex items-center gap-2">
                       <Target className="size-4 text-primary" />
                       <p className="text-sm font-medium text-muted-foreground">
-                        {budgetName(b)} · {BUDGET_PERIOD_LABELS[b.period]}
+                        {budgetName(b) || tr('Overall budget')} ·{' '}
+                        {tr(BUDGET_PERIOD_LABELS[b.period])}
                       </p>
                     </div>
                     <p className="mt-2 text-3xl font-semibold tracking-tight tabular">
                       {money(b.status!.spent)}
                       <span className="ml-2 text-base font-normal text-muted-foreground">
-                        of {money(b.amount)}
+                        {tr('of')} {money(b.amount)}
                       </span>
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -153,10 +159,10 @@ export function BudgetsView() {
                         meta.text,
                       )}
                     >
-                      <meta.icon className="size-4" /> {meta.label}
+                      <meta.icon className="size-4" /> {tr(meta.label)}
                     </span>
                     <BudgetMenu
-                      label={budgetName(b)}
+                      label={budgetName(b) || tr('Overall budget')}
                       onEdit={() => edit(b)}
                       onDelete={() => setDeleting(b)}
                     />
@@ -172,10 +178,12 @@ export function BudgetsView() {
           {byCategory.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Category budgets</h2>
+                <h2 className="text-sm font-semibold">{tr('Category budgets')}</h2>
                 {atRisk > 0 && (
                   <Badge variant="warning">
-                    {atRisk} need{atRisk === 1 ? 's' : ''} attention
+                    {tr(atRisk === 1 ? '{count} needs attention' : '{count} need attention', {
+                      count: atRisk,
+                    })}
                   </Badge>
                 )}
               </div>
@@ -188,20 +196,22 @@ export function BudgetsView() {
                     <div className="flex items-start gap-3">
                       <CategoryIcon icon={b.category!.icon} color={b.category!.color} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{budgetName(b)}</p>
+                        <p className="truncate font-medium">
+                          {budgetName(b) || tr('Overall budget')}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {BUDGET_PERIOD_LABELS[b.period]} · {fmtDate(b.status!.periodStart)} –{' '}
+                          {tr(BUDGET_PERIOD_LABELS[b.period])} · {fmtDate(b.status!.periodStart)} –{' '}
                           {fmtDate(b.status!.periodEnd)}
                         </p>
                       </div>
                       <BudgetMenu
-                        label={budgetName(b)}
+                        label={budgetName(b) || tr('Overall budget')}
                         onEdit={() => edit(b)}
                         onDelete={() => setDeleting(b)}
                       />
                     </div>
                     <p className="mt-4 mb-2 text-xl font-semibold tracking-tight tabular">
-                      {formatPercent(b.status!.percentUsed)}
+                      {formatPercent(b.status!.percentUsed, undefined, locale)}
                     </p>
                     <BudgetProgress amount={b.amount} status={b.status!} />
                   </Card>
@@ -212,21 +222,23 @@ export function BudgetsView() {
 
           {inactive.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold">Not active today</h2>
+              <h2 className="text-sm font-semibold">{tr('Not active today')}</h2>
               <Card className="divide-y">
                 {inactive.map((b) => (
                   <div key={b.id} className="flex items-center gap-3 px-5 py-3.5">
                     <CalendarClock className="size-4 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{budgetName(b)}</p>
+                      <p className="truncate text-sm font-medium">
+                        {budgetName(b) || tr('Overall budget')}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {money(b.amount)} {BUDGET_PERIOD_LABELS[b.period].toLowerCase()} ·{' '}
+                        {money(b.amount)} {tr(BUDGET_PERIOD_LABELS[b.period])} ·{' '}
                         {fmtDate(b.startDate)}
-                        {b.endDate ? ` – ${fmtDate(b.endDate)}` : ' onwards'}
+                        {b.endDate ? ` – ${fmtDate(b.endDate)}` : tr(' onwards')}
                       </p>
                     </div>
                     <BudgetMenu
-                      label={budgetName(b)}
+                      label={budgetName(b) || tr('Overall budget')}
                       onEdit={() => edit(b)}
                       onDelete={() => setDeleting(b)}
                     />
@@ -246,12 +258,13 @@ export function BudgetsView() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
-        title="Delete this budget?"
+        title={tr('Delete this budget?')}
         description={
           deleting && (
             <>
-              The budget &ldquo;{budgetName(deleting)}&rdquo; will be removed. Your transactions are
-              not affected.
+              {tr('The budget “')}
+              {budgetName(deleting) || tr('Overall budget')}
+              {tr('” will be removed. Your transactions are not affected.')}{' '}
             </>
           )
         }

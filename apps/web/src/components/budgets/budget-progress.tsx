@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { BudgetStatus } from '@expense/shared';
 import { AlertTriangle, CircleCheck, OctagonAlert } from 'lucide-react';
@@ -35,6 +36,7 @@ export function BudgetProgress({
   compact?: boolean;
   className?: string;
 }) {
+  const { t: tr, locale } = useLanguage();
   const { money } = useFormatters();
   const meta = STATE[status.state];
   const over = Number(status.remaining) < 0;
@@ -44,21 +46,23 @@ export function BudgetProgress({
       <Progress
         value={status.percentUsed}
         indicatorClassName={meta.bar}
-        aria-label={`${formatPercent(status.percentUsed)} of budget used`}
+        aria-label={tr('{v0} of budget used', {
+          v0: formatPercent(status.percentUsed, undefined, locale),
+        })}
       />
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
         <span className="text-muted-foreground tabular">
-          <span className="font-medium text-foreground">{money(status.spent)}</span> of{' '}
+          <span className="font-medium text-foreground">{money(status.spent)}</span> {tr('of')}{' '}
           {money(amount)}
         </span>
         <span className={cn('inline-flex items-center gap-1 font-medium', meta.text)}>
           <meta.icon className="size-3.5" aria-hidden />
           {compact
-            ? formatPercent(status.percentUsed)
+            ? formatPercent(status.percentUsed, undefined, locale)
             : over
-              ? `${money(status.remaining.replace('-', ''))} over`
-              : `${money(status.remaining)} left`}
-          {!compact && <span className="sr-only">({meta.label})</span>}
+              ? tr('{v0} over', { v0: money(status.remaining.replace('-', '')) })
+              : tr('{v0} left', { v0: money(status.remaining) })}
+          {!compact && <span className="sr-only">({tr(meta.label)})</span>}
         </span>
       </div>
     </div>

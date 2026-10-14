@@ -1,3 +1,6 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language-provider';
 import type { LucideIcon } from 'lucide-react';
 import * as React from 'react';
 import { Card } from '@/components/ui/card';
@@ -21,6 +24,7 @@ export function SummaryCard({
   loading?: boolean;
   className?: string;
 }) {
+  const { t: tr } = useLanguage();
   const toneClass = {
     neutral: 'bg-muted text-muted-foreground',
     income: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
@@ -31,7 +35,7 @@ export function SummaryCard({
   return (
     <Card className={cn('p-5', className)}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium text-muted-foreground">{tr(label)}</p>
         <span
           className={cn('flex size-8 items-center justify-center rounded-lg', toneClass)}
           aria-hidden

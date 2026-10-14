@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   CURRENCIES,
@@ -74,12 +75,13 @@ function Section({
 /* Profile ----------------------------------------------------------------- */
 
 const profileSchema = z.object({
-  name: z.string().trim().min(1, 'Enter your name').max(80),
+  name: z.string().trim().min(1, 'Enter your name').max(80, 'Keep the name under 80 characters'),
   email: z.email('Enter a valid email address'),
   currentPassword: z.string(),
 });
 
 function ProfileSection() {
+  const { t: tr } = useLanguage();
   const user = useUser();
   const { setUser } = useAuth();
   const form = useForm<z.infer<typeof profileSchema>>({
@@ -91,7 +93,9 @@ function ProfileSection() {
 
   const submit = handleSubmit(async (v) => {
     if (emailChanged && !v.currentPassword) {
-      setError('currentPassword', { message: 'Enter your current password to change your email' });
+      setError('currentPassword', {
+        message: tr('Enter your current password to change your email'),
+      });
       return;
     }
     try {
@@ -101,30 +105,30 @@ function ProfileSection() {
       });
       setUser(updated);
       reset({ name: updated.name, email: updated.email, currentPassword: '' });
-      toast.success('Profile updated');
+      toast.success(tr('Profile updated'));
     } catch (e) {
       if (e instanceof ApiError && e.status === 401)
         setError('currentPassword', { message: e.message });
       else if (e instanceof ApiError && e.status === 409) setError('email', { message: e.message });
-      else toast.error('Could not update profile', { description: errorMessage(e) });
+      else toast.error(tr('Could not update profile'), { description: tr(errorMessage(e)) });
     }
   });
 
   return (
     <form onSubmit={submit} noValidate>
       <Section
-        title="Profile"
-        description="Your name and the email you sign in with."
+        title={tr('Profile')}
+        description={tr('Your name and the email you sign in with.')}
         footer={
           <Button type="submit" disabled={!formState.isDirty || formState.isSubmitting}>
             {formState.isSubmitting && <Loader2 className="animate-spin" />}
-            Save profile
+            {tr('Save profile')}{' '}
           </Button>
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="s-name">Display name</Label>
+            <Label htmlFor="s-name">{tr('Display name')}</Label>
             <Input
               id="s-name"
               autoComplete="name"
@@ -134,7 +138,7 @@ function ProfileSection() {
             <FieldError message={formState.errors.name?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="s-email">Email</Label>
+            <Label htmlFor="s-email">{tr('Email')}</Label>
             <Input
               id="s-email"
               type="email"
@@ -147,7 +151,7 @@ function ProfileSection() {
         </div>
         {emailChanged && (
           <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
-            <Label htmlFor="s-current">Current password</Label>
+            <Label htmlFor="s-current">{tr('Current password')}</Label>
             <PasswordInput
               id="s-current"
               autoComplete="current-password"
@@ -188,6 +192,7 @@ interface Prefs {
 }
 
 function PreferencesSection() {
+  const { t: tr, locale } = useLanguage();
   const user = useUser();
   const { setUser } = useAuth();
   const queryClient = useQueryClient();
@@ -214,27 +219,27 @@ function PreferencesSection() {
       reset(prefs);
       // Time zone changes what "today" and "this month" mean, so refresh every report.
       void invalidateFinancialData(queryClient);
-      toast.success('Preferences saved');
+      toast.success(tr('Preferences saved'));
     } catch (e) {
-      toast.error('Could not save preferences', { description: errorMessage(e) });
+      toast.error(tr('Could not save preferences'), { description: tr(errorMessage(e)) });
     }
   });
 
   return (
     <form onSubmit={submit} noValidate>
       <Section
-        title="Preferences"
-        description="How amounts and dates are shown, and which dates count as today."
+        title={tr('Preferences')}
+        description={tr('How amounts and dates are shown, and which dates count as today.')}
         footer={
           <Button type="submit" disabled={!formState.isDirty || formState.isSubmitting}>
             {formState.isSubmitting && <Loader2 className="animate-spin" />}
-            Save preferences
+            {tr('Save preferences')}{' '}
           </Button>
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="p-currency">Currency</Label>
+            <Label htmlFor="p-currency">{tr('Currency')}</Label>
             <Controller
               control={control}
               name="currency"
@@ -246,7 +251,7 @@ function PreferencesSection() {
                   <SelectContent>
                     {CURRENCIES.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c} · {formatMoney('1234.5', c)}
+                        {c} · {formatMoney('1234.5', c, undefined, locale)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -254,11 +259,11 @@ function PreferencesSection() {
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Display only — amounts are not converted.
+              {tr('Display only — amounts are not converted.')}{' '}
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-timezone">Time zone</Label>
+            <Label htmlFor="p-timezone">{tr('Time zone')}</Label>
             <select
               id="p-timezone"
               className="flex h-9 w-full rounded-lg border border-input bg-card px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
@@ -276,12 +281,13 @@ function PreferencesSection() {
                 className="text-xs font-medium text-primary hover:underline"
                 onClick={() => setValue('timezone', browserZone, { shouldDirty: true })}
               >
-                Use this device&apos;s time zone ({browserZone})
+                {tr("Use this device's time zone (")}
+                {browserZone})
               </button>
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-date">Date format</Label>
+            <Label htmlFor="p-date">{tr('Date format')}</Label>
             <Controller
               control={control}
               name="dateFormat"
@@ -293,7 +299,7 @@ function PreferencesSection() {
                   <SelectContent>
                     {DATE_FORMATS.map((f) => (
                       <SelectItem key={f} value={f}>
-                        {formatDate('2026-03-25', f)}
+                        {formatDate('2026-03-25', f, locale)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -302,7 +308,7 @@ function PreferencesSection() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-range">Default dashboard range</Label>
+            <Label htmlFor="p-range">{tr('Default dashboard range')}</Label>
             <Controller
               control={control}
               name="defaultDateRange"
@@ -314,7 +320,7 @@ function PreferencesSection() {
                   <SelectContent>
                     {DATE_RANGE_PRESETS.filter((p) => p !== 'custom').map((p) => (
                       <SelectItem key={p} value={p}>
-                        {DATE_RANGE_PRESET_LABELS[p]}
+                        {tr(DATE_RANGE_PRESET_LABELS[p])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -329,7 +335,7 @@ function PreferencesSection() {
           name="theme"
           render={({ field }) => (
             <fieldset>
-              <legend className="mb-2 text-sm font-medium">Theme</legend>
+              <legend className="mb-2 text-sm font-medium">{tr('Theme')}</legend>
               <div className="grid grid-cols-3 gap-2 sm:max-w-md">
                 {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
                   <button
@@ -344,7 +350,7 @@ function PreferencesSection() {
                     )}
                   >
                     <Icon className="size-4" />
-                    {label}
+                    {tr(label)}
                   </button>
                 ))}
               </div>
@@ -352,7 +358,8 @@ function PreferencesSection() {
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Preview: {formatMoney('1234.5', currency)} on {formatDate('2026-03-25', dateFormat)}
+          {tr('Preview:')} {formatMoney('1234.5', currency, undefined, locale)} {tr('on')}{' '}
+          {formatDate('2026-03-25', dateFormat, locale)}
         </p>
       </Section>
     </form>
@@ -373,6 +380,7 @@ const passwordFormSchema = z
   });
 
 function SecuritySection() {
+  const { t: tr } = useLanguage();
   const { applySession } = useAuth();
   const form = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
@@ -388,31 +396,33 @@ function SecuritySection() {
       });
       applySession(session);
       reset();
-      toast.success('Password changed', { description: 'Other devices have been signed out.' });
+      toast.success(tr('Password changed'), {
+        description: tr('Other devices have been signed out.'),
+      });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401)
         setError('currentPassword', { message: e.message });
       else if (e instanceof ApiError && e.status === 400)
         setError('newPassword', { message: e.message });
-      else toast.error('Could not change password', { description: errorMessage(e) });
+      else toast.error(tr('Could not change password'), { description: tr(errorMessage(e)) });
     }
   });
 
   return (
     <form onSubmit={submit} noValidate>
       <Section
-        title="Password"
-        description="Changing your password signs you out everywhere else."
+        title={tr('Password')}
+        description={tr('Changing your password signs you out everywhere else.')}
         footer={
           <Button type="submit" disabled={formState.isSubmitting}>
             {formState.isSubmitting && <Loader2 className="animate-spin" />}
-            Change password
+            {tr('Change password')}{' '}
           </Button>
         }
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
-            <Label htmlFor="pw-current">Current password</Label>
+            <Label htmlFor="pw-current">{tr('Current password')}</Label>
             <PasswordInput
               id="pw-current"
               autoComplete="current-password"
@@ -422,7 +432,7 @@ function SecuritySection() {
             <FieldError message={formState.errors.currentPassword?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw-new">New password</Label>
+            <Label htmlFor="pw-new">{tr('New password')}</Label>
             <PasswordInput
               id="pw-new"
               autoComplete="new-password"
@@ -432,7 +442,7 @@ function SecuritySection() {
             <FieldError message={formState.errors.newPassword?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw-confirm">Confirm new password</Label>
+            <Label htmlFor="pw-confirm">{tr('Confirm new password')}</Label>
             <PasswordInput
               id="pw-confirm"
               autoComplete="new-password"
@@ -450,6 +460,7 @@ function SecuritySection() {
 /* Danger zone ------------------------------------------------------------- */
 
 function DangerZone() {
+  const { t: tr } = useLanguage();
   const { logout } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState('');
@@ -468,26 +479,29 @@ function DangerZone() {
   return (
     <Card className="border-destructive/30">
       <CardHeader className="flex-col gap-1">
-        <CardTitle className="text-destructive">Delete account</CardTitle>
+        <CardTitle className="text-destructive">{tr('Delete account')}</CardTitle>
         <CardDescription>
-          Permanently delete your account and every transaction, budget, category and schedule. This
-          cannot be undone.
+          {tr(
+            'Permanently delete your account and every transaction, budget, category and schedule. This cannot be undone.',
+          )}{' '}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button variant="destructive" onClick={() => setOpen(true)}>
-          Delete my account
+          {tr('Delete my account')}{' '}
         </Button>
       </CardContent>
       <ConfirmDialog
         open={open}
         onOpenChange={handleOpenChange}
-        title="Delete your account?"
-        description="All of your data will be erased immediately. Consider exporting your transactions first."
+        title={tr('Delete your account?')}
+        description={tr(
+          'All of your data will be erased immediately. Consider exporting your transactions first.',
+        )}
         confirmLabel="Delete account"
         onConfirm={async () => {
           if (confirmation !== 'DELETE' || !password) {
-            setError('Enter your password and type DELETE to confirm.');
+            setError(tr('Enter your password and type DELETE to confirm.'));
             throw new Error('not confirmed');
           }
           try {
@@ -496,13 +510,13 @@ function DangerZone() {
             setError(errorMessage(e));
             throw e;
           }
-          toast.success('Your account has been deleted');
+          toast.success(tr('Your account has been deleted'));
           await logout().catch(() => undefined);
         }}
       >
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="del-password">Password</Label>
+            <Label htmlFor="del-password">{tr('Password')}</Label>
             <PasswordInput
               id="del-password"
               autoComplete="current-password"
@@ -512,7 +526,8 @@ function DangerZone() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="del-confirm">
-              Type <span className="font-mono font-semibold">DELETE</span> to confirm
+              {tr('Type')} <span className="font-mono font-semibold">DELETE</span>{' '}
+              {tr('to confirm')}{' '}
             </Label>
             <Input
               id="del-confirm"
@@ -523,7 +538,7 @@ function DangerZone() {
           </div>
           {error && (
             <p role="alert" className="text-sm text-destructive">
-              {error}
+              {tr(error)}
             </p>
           )}
         </div>
@@ -533,9 +548,13 @@ function DangerZone() {
 }
 
 export function SettingsView() {
+  const { t: tr } = useLanguage();
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <PageHeader title="Settings" description="Manage your profile, preferences and security." />
+      <PageHeader
+        title={tr('Settings')}
+        description={tr('Manage your profile, preferences and security.')}
+      />
       <ProfileSection />
       <PreferencesSection />
       <SecuritySection />

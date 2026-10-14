@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import {
   PAYMENT_METHOD_LABELS,
@@ -33,6 +34,7 @@ import {
 import { useCategories, useSaveRecurring } from '@/lib/api/hooks';
 import { useUser } from '@/lib/auth/auth-provider';
 import { isValidAmount, todayIn } from '@/lib/format';
+import { translate, type Language } from '@/lib/i18n/translate';
 
 const UNIT: Record<(typeof RECURRENCE_FREQUENCIES)[number], [string, string]> = {
   DAILY: ['day', 'days'],
@@ -44,15 +46,22 @@ const UNIT: Record<(typeof RECURRENCE_FREQUENCIES)[number], [string, string]> = 
 export function describeFrequency(
   frequency: (typeof RECURRENCE_FREQUENCIES)[number],
   interval: number,
+  language: Language = 'en',
 ) {
   const [one, many] = UNIT[frequency];
-  return interval === 1 ? `Every ${one}` : `Every ${interval} ${many}`;
+  return interval === 1
+    ? translate(language, 'Every {v0}', { v0: translate(language, one) })
+    : translate(language, 'Every {v0} {v1}', { v0: interval, v1: translate(language, many) });
 }
 
 const schema = z
   .object({
     type: z.enum(['INCOME', 'EXPENSE']),
-    title: z.string().trim().min(1, 'Enter a title').max(120),
+    title: z
+      .string()
+      .trim()
+      .min(1, 'Enter a title')
+      .max(120, 'Keep the title under 120 characters'),
     amount: z
       .string()
       .trim()
@@ -66,7 +75,7 @@ const schema = z
       .refine((v) => Number(v) >= 1 && Number(v) <= 365, 'Between 1 and 365'),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a start date'),
     endDate: z.string(),
-    notes: z.string().trim().max(1000),
+    notes: z.string().trim().max(1000, 'Notes are limited to 1000 characters'),
   })
   .refine((v) => !v.endDate || v.endDate >= v.startDate, {
     path: ['endDate'],
@@ -84,16 +93,18 @@ export function RecurringDialog({
   onOpenChange: (open: boolean) => void;
   item?: RecurringTransaction;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {item ? 'Edit recurring transaction' : 'New recurring transaction'}
+            {item ? tr('Edit recurring transaction') : tr('New recurring transaction')}
           </DialogTitle>
           <DialogDescription>
-            Transactions are created automatically on each due date. Past dates since the start are
-            filled in right away.
+            {tr(
+              'Transactions are created automatically on each due date. Past dates since the start are filled in right away.',
+            )}{' '}
           </DialogDescription>
         </DialogHeader>
         {open && (
@@ -105,6 +116,7 @@ export function RecurringDialog({
 }
 
 function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: () => void }) {
+  const { t: tr, language } = useLanguage();
   const user = useUser();
   const categories = useCategories();
   const save = useSaveRecurring();
@@ -164,10 +176,10 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
       />
       <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
         <div className="space-y-1.5">
-          <Label htmlFor="r-title">Title</Label>
+          <Label htmlFor="r-title">{tr('Title')}</Label>
           <Input
             id="r-title"
-            placeholder="e.g. Rent, Netflix, Salary"
+            placeholder={tr('e.g. Rent, Netflix, Salary')}
             autoFocus
             aria-invalid={!!formState.errors.title}
             {...register('title')}
@@ -175,7 +187,10 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
           <FieldError message={formState.errors.title?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="r-amount">Amount ({user.currency})</Label>
+          <Label htmlFor="r-amount">
+            {tr('Amount (')}
+            {user.currency})
+          </Label>
           <Input
             id="r-amount"
             inputMode="decimal"
@@ -190,14 +205,14 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="r-category">Category</Label>
+          <Label htmlFor="r-category">{tr('Category')}</Label>
           <Controller
             control={control}
             name="categoryId"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="r-category" aria-invalid={!!formState.errors.categoryId}>
-                  <SelectValue placeholder="Choose a category" />
+                  <SelectValue placeholder={tr('Choose a category')} />
                 </SelectTrigger>
                 <SelectContent>
                   {options.map((c) => (
@@ -213,7 +228,7 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
           <FieldError message={formState.errors.categoryId?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="r-method">Payment method</Label>
+          <Label htmlFor="r-method">{tr('Payment method')}</Label>
           <Controller
             control={control}
             name="paymentMethod"
@@ -225,7 +240,7 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
                 <SelectContent>
                   {PAYMENT_METHODS.map((m) => (
                     <SelectItem key={m} value={m}>
-                      {PAYMENT_METHOD_LABELS[m]}
+                      {tr(PAYMENT_METHOD_LABELS[m])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -236,12 +251,12 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="r-interval">Repeats</Label>
+        <Label htmlFor="r-interval">{tr('Repeats')}</Label>
         <div className="grid grid-cols-[5rem_1fr] gap-2">
           <Input
             id="r-interval"
             inputMode="numeric"
-            aria-label="Interval"
+            aria-label={tr('Interval')}
             aria-invalid={!!formState.errors.interval}
             {...register('interval')}
           />
@@ -250,13 +265,13 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
             name="frequency"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger aria-label="Frequency">
+                <SelectTrigger aria-label={tr('Frequency')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {RECURRENCE_FREQUENCIES.map((f) => (
                     <SelectItem key={f} value={f}>
-                      {Number(interval) === 1 ? UNIT[f][0] : UNIT[f][1]}
+                      {tr(Number(interval) === 1 ? UNIT[f][0] : UNIT[f][1])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -266,16 +281,16 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
         </div>
         <p className="text-xs text-muted-foreground">
           {formState.errors.interval ? (
-            <span className="text-destructive">{formState.errors.interval.message}</span>
+            <span className="text-destructive">{tr(formState.errors.interval.message ?? '')}</span>
           ) : (
-            describeFrequency(frequency, Math.max(1, Number(interval) || 1))
+            describeFrequency(frequency, Math.max(1, Number(interval) || 1), language)
           )}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="r-start">Start date</Label>
+          <Label htmlFor="r-start">{tr('Start date')}</Label>
           <Input
             id="r-start"
             type="date"
@@ -286,7 +301,8 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="r-end">
-            End date <span className="font-normal text-muted-foreground">(optional)</span>
+            {tr('End date')}{' '}
+            <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
           </Label>
           <Input
             id="r-end"
@@ -300,18 +316,19 @@ function RecurringForm({ item, onDone }: { item?: RecurringTransaction; onDone: 
 
       <div className="space-y-1.5">
         <Label htmlFor="r-notes">
-          Notes <span className="font-normal text-muted-foreground">(optional)</span>
+          {tr('Notes')}{' '}
+          <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
         </Label>
         <Textarea id="r-notes" rows={2} {...register('notes')} />
       </div>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onDone}>
-          Cancel
+          {tr('Cancel')}{' '}
         </Button>
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          {item ? 'Save changes' : 'Create schedule'}
+          {item ? tr('Save changes') : tr('Create schedule')}
         </Button>
       </div>
     </form>

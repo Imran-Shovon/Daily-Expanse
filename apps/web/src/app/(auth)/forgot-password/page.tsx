@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Loader2, MailCheck } from 'lucide-react';
@@ -17,6 +18,7 @@ import { errorMessage } from '@/lib/api/hooks';
 const schema = z.object({ email: z.email('Enter a valid email address') });
 
 export default function ForgotPasswordPage() {
+  const { t: tr } = useLanguage();
   const [sentTo, setSentTo] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const form = useForm<z.infer<typeof schema>>({
@@ -42,17 +44,18 @@ export default function ForgotPasswordPage() {
           <MailCheck className="size-5" />
         </div>
         <AuthHeading
-          title="Check your email"
+          title={tr('Check your email')}
           description={
             <>
-              If an account exists for <span className="font-medium text-foreground">{sentTo}</span>
-              , we sent a link to reset your password. It expires in 30 minutes.
+              {tr('If an account exists for')}{' '}
+              <span className="font-medium text-foreground">{sentTo}</span>
+              {tr(', we sent a link to reset your password. It expires in 30 minutes.')}{' '}
             </>
           }
         />
         <Button asChild variant="outline" className="w-full">
           <Link href="/login">
-            <ArrowLeft /> Back to sign in
+            <ArrowLeft /> {tr('Back to sign in')}{' '}
           </Link>
         </Button>
       </div>
@@ -62,13 +65,13 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <AuthHeading
-        title="Reset your password"
-        description="Enter the email you signed up with and we will send you a reset link."
+        title={tr('Reset your password')}
+        description={tr('Enter the email you signed up with and we will send you a reset link.')}
       />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormAlert message={error} />
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{tr('Email')}</Label>
           <Input
             id="email"
             type="email"
@@ -81,7 +84,7 @@ export default function ForgotPasswordPage() {
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Send reset link
+          {tr('Send reset link')}{' '}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm">
@@ -89,7 +92,7 @@ export default function ForgotPasswordPage() {
           href="/login"
           className="inline-flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="size-3.5" /> Back to sign in
+          <ArrowLeft className="size-3.5" /> {tr('Back to sign in')}{' '}
         </Link>
       </p>
     </>

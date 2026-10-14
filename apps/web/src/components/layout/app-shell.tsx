@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { Loader2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,10 +11,11 @@ import { AppSidebar } from './app-sidebar';
 import { Logo } from './logo';
 
 function FullPageLoader() {
+  const { t: tr } = useLanguage();
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4">
       <Logo showText={false} />
-      <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label="Loading" />
+      <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label={tr('Loading')} />
     </div>
   );
 }

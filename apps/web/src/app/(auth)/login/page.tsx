@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -27,6 +28,7 @@ const schema = z.object({
 });
 
 export default function LoginPage() {
+  const { t: tr } = useLanguage();
   useRedirectIfAuthenticated();
   const { login } = useAuth();
   const router = useRouter();
@@ -39,9 +41,9 @@ export default function LoginPage() {
   const { register, handleSubmit, formState } = form;
 
   const notice = searchParams.get('expired')
-    ? 'Your session expired. Please sign in again.'
+    ? tr('Your session expired. Please sign in again.')
     : searchParams.get('reset')
-      ? 'Password updated. Sign in with your new password.'
+      ? tr('Password updated. Sign in with your new password.')
       : null;
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
@@ -56,14 +58,17 @@ export default function LoginPage() {
 
   return (
     <>
-      <AuthHeading title="Welcome back" description="Sign in to see where your money is going." />
+      <AuthHeading
+        title={tr('Welcome back')}
+        description={tr('Sign in to see where your money is going.')}
+      />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormAlert message={error} />
         {!error && (
           <FormAlert message={notice} tone={searchParams.get('reset') ? 'success' : 'info'} />
         )}
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{tr('Email')}</Label>
           <Input
             id="email"
             type="email"
@@ -76,12 +81,12 @@ export default function LoginPage() {
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{tr('Password')}</Label>
             <Link
               href="/forgot-password"
               className="text-xs font-medium text-primary hover:underline"
             >
-              Forgot password?
+              {tr('Forgot password?')}{' '}
             </Link>
           </div>
           <PasswordInput
@@ -94,13 +99,13 @@ export default function LoginPage() {
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Sign in
+          {tr('Sign in')}{' '}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New here?{' '}
+        {tr('New here?')}{' '}
         <Link href="/register" className="font-medium text-primary hover:underline">
-          Create an account
+          {tr('Create an account')}{' '}
         </Link>
       </p>
     </>

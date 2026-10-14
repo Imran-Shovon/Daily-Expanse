@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { Budget, Category, TransactionType } from '@expense/shared';
 import { PiggyBank, Pencil, Plus, Tags, Trash2 } from 'lucide-react';
@@ -37,11 +38,17 @@ function CategoryBudget({
   onSet: () => void;
   name: string;
 }) {
+  const { t: tr } = useLanguage();
   const { money } = useFormatters();
   if (!budget?.status) {
     return (
-      <Button variant="outline" size="sm" onClick={onSet} aria-label={`Set budget for ${name}`}>
-        <PiggyBank /> Set budget
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onSet}
+        aria-label={tr('Set budget for {v0}', { v0: name })}
+      >
+        <PiggyBank /> {tr('Set budget')}{' '}
       </Button>
     );
   }
@@ -51,12 +58,18 @@ function CategoryBudget({
     <button
       onClick={onSet}
       className="w-36 rounded-lg px-2 py-1 text-left outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-44"
-      aria-label={`Edit budget for ${name}`}
+      aria-label={tr('Edit budget for {v0}', { v0: name })}
     >
       <p className="flex justify-between gap-2 text-xs">
         <span className="text-muted-foreground">
           {money(budget.amount)}/
-          {budget.period === 'MONTHLY' ? 'mo' : budget.period === 'WEEKLY' ? 'wk' : 'yr'}
+          {tr(
+            budget.period === 'MONTHLY'
+              ? 'Monthly'
+              : budget.period === 'WEEKLY'
+                ? 'Weekly'
+                : 'Yearly',
+          )}
         </span>
         <span
           className={cn(
@@ -69,8 +82,8 @@ function CategoryBudget({
           )}
         >
           {over
-            ? `${money(status.remaining.replace('-', ''))} over`
-            : `${money(status.remaining)} left`}
+            ? tr('{v0} over', { v0: money(status.remaining.replace('-', '')) })
+            : tr('{v0} left', { v0: money(status.remaining) })}
         </span>
       </p>
       <Progress
@@ -101,6 +114,7 @@ function CategoryList({
   onDelete: (c: Category) => void;
   onBudget: (c: Category, budget: Budget | null) => void;
 }) {
+  const { t: tr } = useLanguage();
   return (
     <ul className="divide-y">
       {items.map((c) => (
@@ -111,14 +125,16 @@ function CategoryList({
               <span className="truncate">{c.name}</span>
               {c.isDefault && (
                 <Badge variant="secondary" className="hidden sm:inline-flex">
-                  Default
+                  {tr('Default')}{' '}
                 </Badge>
               )}
             </p>
             <p className="text-xs text-muted-foreground tabular">
               {c.transactionCount === 0
-                ? 'Not used yet'
-                : `${c.transactionCount} transaction${c.transactionCount === 1 ? '' : 's'}`}
+                ? tr('Not used yet')
+                : tr(c.transactionCount === 1 ? '{count} transaction' : '{count} transactions', {
+                    count: c.transactionCount,
+                  })}
             </p>
           </div>
           {c.type === 'EXPENSE' && budgets && (
@@ -133,7 +149,7 @@ function CategoryList({
               variant="ghost"
               size="icon-sm"
               onClick={() => onEdit(c)}
-              aria-label={`Edit ${c.name}`}
+              aria-label={tr('Edit {v0}', { v0: c.name })}
             >
               <Pencil />
             </Button>
@@ -141,7 +157,7 @@ function CategoryList({
               variant="ghost"
               size="icon-sm"
               onClick={() => onDelete(c)}
-              aria-label={`Delete ${c.name}`}
+              aria-label={tr('Delete {v0}', { v0: c.name })}
             >
               <Trash2 />
             </Button>
@@ -161,6 +177,7 @@ function DeleteCategoryDialog({
   candidates: Category[];
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t: tr } = useLanguage();
   const remove = useDeleteCategory();
   // Remounted per category (keyed by the parent), so state starts fresh each time.
   const [reassignTo, setReassignTo] = React.useState('');
@@ -177,16 +194,20 @@ function DeleteCategoryDialog({
     <ConfirmDialog
       open={category !== null}
       onOpenChange={onOpenChange}
-      title={`Delete "${category?.name}"?`}
+      title={tr('Delete "{v0}"?', { v0: category?.name ?? '' })}
       description={
         needsReassign
-          ? 'This category is still in use. Choose where its transactions and recurring schedules should move before deleting it.'
-          : 'This category is not used by any transactions. Budgets for it will also be removed.'
+          ? tr(
+              'This category is still in use. Choose where its transactions and recurring schedules should move before deleting it.',
+            )
+          : tr(
+              'This category is not used by any transactions. Budgets for it will also be removed.',
+            )
       }
       onConfirm={async () => {
         if (!category) return;
         if (needsReassign && !reassignTo) {
-          setError('Choose a category to move transactions to.');
+          setError(tr('Choose a category to move transactions to.'));
           throw new Error('reassign required');
         }
         try {
@@ -196,7 +217,7 @@ function DeleteCategoryDialog({
             setNeedsReassign(true);
             setError(e.message);
           } else {
-            toast.error('Could not delete category', { description: errorMessage(e) });
+            toast.error(tr('Could not delete category'), { description: tr(errorMessage(e)) });
           }
           throw e;
         }
@@ -204,10 +225,10 @@ function DeleteCategoryDialog({
     >
       {needsReassign && (
         <div className="space-y-1.5">
-          <Label htmlFor="reassign">Move transactions to</Label>
+          <Label htmlFor="reassign">{tr('Move transactions to')}</Label>
           <Select value={reassignTo} onValueChange={setReassignTo}>
             <SelectTrigger id="reassign" aria-invalid={!!error}>
-              <SelectValue placeholder="Choose a category" />
+              <SelectValue placeholder={tr('Choose a category')} />
             </SelectTrigger>
             <SelectContent>
               {targets.map((c) => (
@@ -222,7 +243,7 @@ function DeleteCategoryDialog({
       )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
-          {error}
+          {tr(error)}
         </p>
       )}
     </ConfirmDialog>
@@ -230,6 +251,7 @@ function DeleteCategoryDialog({
 }
 
 export function CategoriesView() {
+  const { t: tr } = useLanguage();
   const query = useCategories();
   const [tab, setTab] = React.useState<TransactionType>('EXPENSE');
   const [dialog, setDialog] = React.useState<{ open: boolean; category?: Category }>({
@@ -250,11 +272,11 @@ export function CategoriesView() {
       return (
         <EmptyState
           icon={Tags}
-          title={`No ${type === 'EXPENSE' ? 'expense' : 'income'} categories`}
-          description="Create one to start organising your transactions."
+          title={tr('No {v0} categories', { v0: tr(type === 'EXPENSE' ? 'expense' : 'income') })}
+          description={tr('Create one to start organising your transactions.')}
           action={
             <Button onClick={() => setDialog({ open: true })}>
-              <Plus /> New category
+              <Plus /> {tr('New category')}{' '}
             </Button>
           }
         />
@@ -276,11 +298,13 @@ export function CategoriesView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Categories"
-        description="Organise transactions your way. Defaults are created for you and can be changed."
+        title={tr('Categories')}
+        description={tr(
+          'Organise transactions your way. Defaults are created for you and can be changed.',
+        )}
         actions={
           <Button onClick={() => setDialog({ open: true })}>
-            <Plus /> New category
+            <Plus /> {tr('New category')}{' '}
           </Button>
         }
       />
@@ -288,13 +312,13 @@ export function CategoriesView() {
       <Tabs value={tab} onValueChange={(v) => setTab(v as TransactionType)}>
         <TabsList>
           <TabsTrigger value="EXPENSE">
-            Expenses{' '}
+            {tr('Expenses')}{' '}
             <span className="ml-1.5 text-xs text-muted-foreground tabular">
               {all.filter((c) => c.type === 'EXPENSE').length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="INCOME">
-            Income{' '}
+            {tr('Income')}{' '}
             <span className="ml-1.5 text-xs text-muted-foreground tabular">
               {all.filter((c) => c.type === 'INCOME').length}
             </span>

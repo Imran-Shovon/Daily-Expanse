@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { Transaction, TransactionType } from '@expense/shared';
 import * as React from 'react';
@@ -23,6 +24,7 @@ export function TransactionDialog({
   transaction?: Transaction;
   defaultType?: TransactionType;
 }) {
+  const { t: tr } = useLanguage();
   const create = useCreateTransaction();
   const update = useUpdateTransaction();
 
@@ -30,11 +32,11 @@ export function TransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{transaction ? 'Edit transaction' : 'New transaction'}</DialogTitle>
+          <DialogTitle>{transaction ? tr('Edit transaction') : tr('New transaction')}</DialogTitle>
           <DialogDescription>
             {transaction
-              ? 'Update the details below.'
-              : 'Record income or an expense in a few seconds.'}
+              ? tr('Update the details below.')
+              : tr('Record income or an expense in a few seconds.')}
           </DialogDescription>
         </DialogHeader>
         {open && (

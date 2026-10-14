@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/lib/i18n/language-provider';
 
 import type { Budget, CategorySummary } from '@expense/shared';
 import { AlertTriangle, OctagonAlert, PiggyBank, Plus } from 'lucide-react';
@@ -38,6 +39,7 @@ export function CategoryBudgetCard({
   /** When editing: the saved expense, already counted in "spent". */
   original?: { categoryId: string; date: string; amount: string; type: string };
 }) {
+  const { t: tr, locale } = useLanguage();
   const { money } = useFormatters();
   const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
   const budgets = useBudgets(validDate);
@@ -53,11 +55,12 @@ export function CategoryBudgetCard({
       <div className="flex flex-col gap-3 rounded-xl border border-dashed bg-muted/30 p-4 sm:flex-row sm:items-center">
         <PiggyBank className="size-5 shrink-0 text-muted-foreground" />
         <p className="flex-1 text-sm text-muted-foreground">
-          No monthly budget for <span className="font-medium text-foreground">{category.name}</span>{' '}
-          yet. Set one to see how much you have left.
+          {tr('No monthly budget for')}{' '}
+          <span className="font-medium text-foreground">{category.name}</span>{' '}
+          {tr('yet. Set one to see how much you have left.')}{' '}
         </p>
         <Button type="button" variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus /> Set monthly budget
+          <Plus /> {tr('Set monthly budget')}{' '}
         </Button>
         <BudgetDialog
           open={dialogOpen}
@@ -101,19 +104,27 @@ export function CategoryBudgetCard({
     >
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-medium">
-          {category.name} · {budget.period === 'MONTHLY' ? 'monthly' : budget.period.toLowerCase()}{' '}
-          budget
+          {category.name} ·{' '}
+          {tr('{period} budget', {
+            period: tr(
+              budget.period === 'MONTHLY'
+                ? 'Monthly'
+                : budget.period === 'WEEKLY'
+                  ? 'Weekly'
+                  : 'Yearly',
+            ),
+          })}
         </p>
         <p className="text-sm text-muted-foreground tabular">{money(budget.amount)}</p>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-card px-2 py-2">
-          <p className="text-[11px] text-muted-foreground">Spent</p>
+          <p className="text-[11px] text-muted-foreground">{tr('Spent')}</p>
           <p className="text-sm font-semibold tabular">{money(fromCents(spent))}</p>
         </div>
         <div className="rounded-lg bg-card px-2 py-2">
-          <p className="text-[11px] text-muted-foreground">Available</p>
+          <p className="text-[11px] text-muted-foreground">{tr('Available')}</p>
           <p
             className={cn(
               'text-sm font-semibold tabular',
@@ -124,7 +135,7 @@ export function CategoryBudgetCard({
           </p>
         </div>
         <div className="rounded-lg bg-card px-2 py-2">
-          <p className="text-[11px] text-muted-foreground">After this</p>
+          <p className="text-[11px] text-muted-foreground">{tr('After this')}</p>
           <p className={cn('text-sm font-semibold tabular', after < 0 && 'text-destructive')}>
             {thisExpense ? money(fromCents(after)) : '—'}
           </p>
@@ -141,7 +152,9 @@ export function CategoryBudgetCard({
               ? 'bg-amber-500'
               : 'bg-primary'
         }
-        aria-label={`${formatPercent(afterPercent)} of budget used including this expense`}
+        aria-label={tr('{v0} of budget used including this expense', {
+          v0: formatPercent(afterPercent, undefined, locale),
+        })}
       />
 
       {state !== 'ok' && thisExpense > 0 && (
@@ -157,8 +170,10 @@ export function CategoryBudgetCard({
             <AlertTriangle className="size-3.5" />
           )}
           {state === 'exceeded'
-            ? `This expense puts you ${money(fromCents(-after))} over budget.`
-            : `You will have used ${formatPercent(afterPercent)} of this budget.`}
+            ? tr('This expense puts you {v0} over budget.', { v0: money(fromCents(-after)) })
+            : tr('You will have used {v0} of this budget.', {
+                v0: formatPercent(afterPercent, undefined, locale),
+              })}
         </p>
       )}
     </div>
