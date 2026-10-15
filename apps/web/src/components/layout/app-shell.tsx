@@ -1,24 +1,12 @@
 'use client';
-import { useLanguage } from '@/lib/i18n/language-provider';
 
-import { Loader2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
+import { BrandLoader } from '@/components/common/brand-loader';
 import { QuickAddProvider } from '@/components/transactions/transaction-dialog';
 import { useAuth } from '@/lib/auth/auth-provider';
 import { AppHeader } from './app-header';
 import { AppSidebar } from './app-sidebar';
-import { Logo } from './logo';
-
-function FullPageLoader() {
-  const { t: tr } = useLanguage();
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4">
-      <Logo showText={false} />
-      <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label={tr('Loading')} />
-    </div>
-  );
-}
 
 /** Client-side gate for authenticated pages. The API enforces access regardless. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -32,7 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [status, router, pathname]);
 
-  if (status !== 'authenticated') return <FullPageLoader />;
+  if (status !== 'authenticated') return <BrandLoader />;
 
   return (
     <QuickAddProvider>

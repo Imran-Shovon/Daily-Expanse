@@ -1,5 +1,9 @@
 /** English source strings are stable translation keys; user-entered data is never translated. */
 export const bangla: Record<string, string> = {
+  'Securing your session…': 'আপনার সেশন সুরক্ষিত করা হচ্ছে…',
+  'Tallying your transactions…': 'আপনার লেনদেন হিসাব করা হচ্ছে…',
+  'Balancing your budgets…': 'আপনার বাজেট মেলানো হচ্ছে…',
+  'Preparing your dashboard…': 'আপনার ড্যাশবোর্ড প্রস্তুত করা হচ্ছে…',
   'All transactions': 'সব লেনদেন',
   'e.g. Household spending': 'যেমন: সংসারের খরচ',
   'e.g. Rent, Netflix, Salary': 'যেমন: ভাড়া, নেটফ্লিক্স, বেতন',

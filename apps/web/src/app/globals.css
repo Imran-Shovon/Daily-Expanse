@@ -144,3 +144,162 @@
 .recharts-wrapper *:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Brand loader ------------------------------------------------------------ */
+@keyframes loader-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes loader-breathe {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.85;
+  }
+}
+/* Trend line draws in, holds, then retracts so the loop never jumps. */
+@keyframes loader-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  45%,
+  70% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes loader-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+@keyframes loader-message {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(2px);
+  }
+  12%,
+  88% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+    filter: blur(2px);
+  }
+}
+@keyframes loader-coin {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Fade in after a beat so fast loads don't flash a loader at all. */
+.loader-enter {
+  animation: loader-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+.loader-ring {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in oklch, var(--primary) 15%, transparent) 120deg,
+    var(--primary) 300deg,
+    transparent 360deg
+  );
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: loader-spin 1.4s linear infinite;
+}
+.loader-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 45%, transparent),
+    transparent 70%
+  );
+  animation: loader-breathe 2.4s ease-in-out infinite;
+}
+.loader-path {
+  stroke-dasharray: 1;
+  animation: loader-draw 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.loader-path-head {
+  animation-delay: 0.25s;
+}
+.loader-coin {
+  animation: loader-coin 2.4s ease-out infinite;
+}
+.loader-sweep {
+  animation: loader-sweep 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.loader-message {
+  animation: loader-message 2.4s ease-in-out both;
+}
+
+/* Skeletons get a soft light sweep instead of a flat pulse. */
+.skeleton-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklch, var(--foreground) 6%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-ring,
+  .loader-glow,
+  .loader-coin,
+  .loader-sweep,
+  .loader-message,
+  .skeleton-shimmer {
+    animation: none;
+  }
+  .loader-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .loader-coin {
+    display: none;
+  }
+}

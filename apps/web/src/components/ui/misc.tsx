@@ -39,7 +39,7 @@ function Badge({
 
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div className={cn('animate-pulse rounded-md bg-muted', className)} aria-hidden {...props} />
+    <div className={cn('skeleton-shimmer rounded-md bg-muted', className)} aria-hidden {...props} />
   );
 }
 
