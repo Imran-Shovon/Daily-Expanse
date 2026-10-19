@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   ChartColumn,
+  HandCoins,
   LayoutDashboard,
   PiggyBank,
   Repeat,
@@ -22,5 +23,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/categories', label: 'Categories', icon: Tags },
   { href: '/reports', label: 'Reports', icon: ChartColumn },
   { href: '/recurring', label: 'Recurring', icon: Repeat },
+  { href: '/loans', label: 'Loans', icon: HandCoins },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

@@ -15,13 +15,16 @@ import {
   budgetsApi,
   categoriesApi,
   dashboardApi,
+  loansApi,
   recurringApi,
   reportsApi,
   transactionsApi,
   type BudgetInput,
   type CategoryInput,
+  type LoanInput,
   type RangeParams,
   type RecurringInput,
+  type RepaymentInput,
   type TransactionFilters,
   type TransactionInput,
 } from './endpoints';
@@ -42,6 +45,7 @@ export const queryKeys = {
     ['reports', 'income-expenses', r, g ?? 'auto'] as const,
   recurring: () => ['recurring'] as const,
   recurringExecutions: (id: string) => ['recurring', id, 'executions'] as const,
+  loans: () => ['loans'] as const,
 };
 
 const FINANCIAL_ROOTS = new Set([
@@ -52,6 +56,7 @@ const FINANCIAL_ROOTS = new Set([
   'budgets',
   'categories',
   'recurring',
+  'loans',
 ]);
 
 /** Any write can affect totals, budgets and counts, so refresh every financial view. */
@@ -288,4 +293,43 @@ export function useDeleteRecurring() {
     success: 'Schedule deleted',
     error: 'Could not delete schedule',
   });
+}
+
+/* Loans -------------------------------------------------------------------- */
+
+export function useLoans() {
+  return useQuery({ queryKey: queryKeys.loans(), queryFn: () => loansApi.overview() });
+}
+
+export function useSaveLoan() {
+  return useFinancialMutation(
+    ({ id, input }: { id?: string; input: LoanInput }) =>
+      id ? loansApi.update(id, input) : loansApi.create(input),
+    { success: 'Loan saved', error: 'Could not save loan' },
+  );
+}
+
+export function useDeleteLoan() {
+  return useFinancialMutation((id: string) => loansApi.remove(id), {
+    success: 'Loan deleted',
+    error: 'Could not delete loan',
+  });
+}
+
+export function useRepayLoan() {
+  return useFinancialMutation(
+    ({ id, input }: { id: string; input: RepaymentInput }) => loansApi.repay(id, input),
+    {
+      success: (loan) => (loan.status === 'paid' ? 'Loan fully repaid' : 'Repayment recorded'),
+      error: 'Could not record repayment',
+    },
+  );
+}
+
+export function useDeleteRepayment() {
+  return useFinancialMutation(
+    ({ id, repaymentId }: { id: string; repaymentId: string }) =>
+      loansApi.removeRepayment(id, repaymentId),
+    { success: 'Repayment removed', error: 'Could not remove repayment' },
+  );
 }

@@ -227,3 +227,43 @@ export interface IncomeExpenseReport {
   points: IncomeExpensePoint[];
   totals: { income: Money; expenses: Money; net: Money; savingsRate: number | null };
 }
+
+/** `paid` once repayments cover the amount; `overdue` when unpaid past the due date. */
+export type LoanStatus = 'active' | 'overdue' | 'paid';
+
+export interface LoanRepayment {
+  id: string;
+  amount: Money;
+  paidOn: IsoDate;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface Loan {
+  id: string;
+  lender: string;
+  amount: Money;
+  borrowedOn: IsoDate;
+  dueDate: IsoDate | null;
+  notes: string | null;
+  repaid: Money;
+  outstanding: Money;
+  /** Percentage of the amount repaid, rounded to 1 decimal place. */
+  percentRepaid: number;
+  status: LoanStatus;
+  /** Newest first. */
+  repayments: LoanRepayment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoansOverview {
+  totals: {
+    borrowed: Money;
+    repaid: Money;
+    outstanding: Money;
+    activeCount: number;
+    overdueCount: number;
+  };
+  loans: Loan[];
+}

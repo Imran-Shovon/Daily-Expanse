@@ -1,0 +1,86 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsMoney, IsPlainDate, MoneyTransform, Trim } from '../../common/validation/validators';
+
+export class CreateLoanDto {
+  @ApiProperty({ example: 'Rahim (brother)', description: 'Who you borrowed from' })
+  @Trim()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(80)
+  lender: string;
+
+  @ApiProperty({ example: '5000.00' })
+  @MoneyTransform()
+  @IsMoney()
+  amount: string;
+
+  @ApiPropertyOptional({ example: '2026-10-19', description: 'Defaults to today' })
+  @IsOptional()
+  @IsPlainDate()
+  borrowedOn?: string;
+
+  @ApiPropertyOptional({ example: '2027-01-31' })
+  @IsOptional()
+  @IsPlainDate()
+  dueDate?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string | null;
+}
+
+export class UpdateLoanDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(80)
+  lender?: string;
+
+  @ApiPropertyOptional({ description: 'Cannot be lower than the amount already repaid' })
+  @IsOptional()
+  @MoneyTransform()
+  @IsMoney()
+  amount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsPlainDate()
+  borrowedOn?: string;
+
+  @ApiPropertyOptional({ description: 'null removes the due date' })
+  @IsOptional()
+  @IsPlainDate()
+  dueDate?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string | null;
+}
+
+export class CreateRepaymentDto {
+  @ApiProperty({ example: '1000.00', description: 'Cannot exceed the outstanding amount' })
+  @MoneyTransform()
+  @IsMoney()
+  amount: string;
+
+  @ApiPropertyOptional({ example: '2026-11-01', description: 'Defaults to today' })
+  @IsOptional()
+  @IsPlainDate()
+  paidOn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(500)
+  notes?: string | null;
+}

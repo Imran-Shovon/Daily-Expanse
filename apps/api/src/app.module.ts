@@ -12,6 +12,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RequestLoggerMiddleware } from './common/logging/request-logger.middleware';
 import { AppConfig, validateEnv } from './config/configuration';
 import { HealthController } from './health/health.controller';
+import { LoansModule } from './loans/loans.module';
 import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RecurringTransactionsModule } from './recurring/recurring.module';
@@ -53,6 +54,7 @@ import { UsersModule } from './users/users.module';
     BudgetsModule,
     ReportsModule,
     RecurringTransactionsModule,
+    LoansModule,
   ],
   controllers: [HealthController],
   providers: [

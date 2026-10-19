@@ -7,6 +7,8 @@ import type {
   DashboardSummary,
   DateRangePreset,
   IncomeExpenseReport,
+  Loan,
+  LoansOverview,
   Paginated,
   PaymentMethod,
   RecurrenceFrequency,
@@ -225,4 +227,34 @@ export const recurringApi = {
     }),
   remove: (id: string) =>
     api<void>(`/recurring-transactions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+};
+
+/* Loans ------------------------------------------------------------------ */
+
+export interface LoanInput {
+  lender: string;
+  amount: string;
+  borrowedOn: string;
+  dueDate: string | null;
+  notes: string | null;
+}
+
+export interface RepaymentInput {
+  amount: string;
+  paidOn: string;
+  notes: string | null;
+}
+
+export const loansApi = {
+  overview: () => api<LoansOverview>('/loans'),
+  create: (body: LoanInput) => api<Loan>('/loans', { method: 'POST', body }),
+  update: (id: string, body: Partial<LoanInput>) =>
+    api<Loan>(`/loans/${encodeURIComponent(id)}`, { method: 'PATCH', body }),
+  remove: (id: string) => api<void>(`/loans/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  repay: (id: string, body: RepaymentInput) =>
+    api<Loan>(`/loans/${encodeURIComponent(id)}/repayments`, { method: 'POST', body }),
+  removeRepayment: (id: string, repaymentId: string) =>
+    api<Loan>(`/loans/${encodeURIComponent(id)}/repayments/${encodeURIComponent(repaymentId)}`, {
+      method: 'DELETE',
+    }),
 };
