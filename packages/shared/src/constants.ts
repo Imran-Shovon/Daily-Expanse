@@ -180,3 +180,6 @@ export const CURRENCIES = [
 /** Budget usage thresholds in percent. */
 export const BUDGET_WARNING_THRESHOLD = 80;
 export const BUDGET_EXCEEDED_THRESHOLD = 100;
+
+export const SAVINGS_ENTRY_TYPES = ['DEPOSIT', 'WITHDRAWAL'] as const;
+export type SavingsEntryType = (typeof SAVINGS_ENTRY_TYPES)[number];

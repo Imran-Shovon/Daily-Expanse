@@ -15,6 +15,9 @@ import type {
   RecurringExecution,
   RecurringTransaction,
   ReportGranularity,
+  SavingsEntry,
+  SavingsEntryType,
+  SavingsSummary,
   SpendingTrends,
   Transaction,
   TransactionReport,
@@ -257,4 +260,34 @@ export const loansApi = {
     api<Loan>(`/loans/${encodeURIComponent(id)}/repayments/${encodeURIComponent(repaymentId)}`, {
       method: 'DELETE',
     }),
+};
+
+/* Savings ---------------------------------------------------------------- */
+
+export interface SavingsEntryInput {
+  type: SavingsEntryType;
+  amount: string;
+  date: string;
+  /** Required when adding money. */
+  source?: string;
+  /** Required when taking money out. */
+  purpose?: string;
+  notes: string | null;
+}
+
+export interface SavingsHistoryFilters {
+  page?: number;
+  pageSize?: number;
+  type?: SavingsEntryType;
+}
+
+export const savingsApi = {
+  summary: () => api<SavingsSummary>('/savings'),
+  entries: (filters: SavingsHistoryFilters) =>
+    api<Paginated<SavingsEntry>>('/savings/entries', {
+      query: filters as Record<string, QueryValue>,
+    }),
+  add: (body: SavingsEntryInput) => api<SavingsEntry>('/savings/entries', { method: 'POST', body }),
+  remove: (id: string) =>
+    api<void>(`/savings/entries/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };

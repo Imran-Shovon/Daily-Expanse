@@ -29,6 +29,7 @@ import {
   IncomeExpenseChart,
   SpendingTrendChart,
 } from '@/components/dashboard/charts';
+import { SavingsCard } from '@/components/dashboard/savings-card';
 import { SummaryCard } from '@/components/dashboard/summary-card';
 import { useQuickAdd } from '@/components/transactions/transaction-dialog';
 import { TransactionTable } from '@/components/transactions/transaction-table';
@@ -277,6 +278,8 @@ export function DashboardView() {
                   )}
                 </div>
               </Card>
+
+              <SavingsCard />
 
               <ChartCard
                 title={tr('Spending trend')}

@@ -8,10 +8,11 @@ import {
   type TransactionType,
 } from '@expense/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { CATEGORY_ICON_MAP, CategoryIcon } from '@/components/common/category-icon';
+import { ColorPicker, IconPicker } from '@/components/common/appearance-picker';
+import { CategoryIcon } from '@/components/common/category-icon';
 import { FieldError } from '@/components/common/field-error';
 import { TransactionTypeToggle } from '@/components/transactions/transaction-form';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api/client';
 import { useSaveCategory } from '@/lib/api/hooks';
-import { cn } from '@/lib/utils';
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter a name').max(50, 'Keep the name under 50 characters'),
@@ -140,57 +140,14 @@ function CategoryForm({
       <Controller
         control={control}
         name="color"
-        render={({ field }) => (
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">{tr('Color')}</legend>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => field.onChange(c)}
-                  aria-label={tr('Color {v0}', { v0: c })}
-                  aria-pressed={field.value === c}
-                  className="flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ backgroundColor: c }}
-                >
-                  {field.value === c && <Check className="size-4 text-white" strokeWidth={3} />}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
+        render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />}
       />
 
       <Controller
         control={control}
         name="icon"
         render={({ field }) => (
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium">{tr('Icon')}</legend>
-            <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10">
-              {CATEGORY_ICONS.map((name) => {
-                const Icon = CATEGORY_ICON_MAP[name]!;
-                const selected = field.value === name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => field.onChange(name)}
-                    aria-label={name.replace(/-/g, ' ')}
-                    aria-pressed={selected}
-                    className={cn(
-                      'flex aspect-square items-center justify-center rounded-lg border text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                      selected && 'border-transparent text-white',
-                    )}
-                    style={selected ? { backgroundColor: color } : undefined}
-                  >
-                    <Icon className="size-4" />
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
+          <IconPicker value={field.value} onChange={field.onChange} color={color} />
         )}
       />
 

@@ -119,7 +119,7 @@ async function main() {
       email: DEMO_EMAIL,
       name: 'Demo User',
       passwordHash: await bcrypt.hash(DEMO_PASSWORD, 12),
-      currency: 'USD',
+      currency: 'BDT',
       timezone: TIMEZONE,
     },
   });

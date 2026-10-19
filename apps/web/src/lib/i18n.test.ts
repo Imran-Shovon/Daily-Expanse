@@ -27,6 +27,7 @@ test('Bangla formats money, dates and percentages without changing calendar date
   assert.match(formatDate('2026-03-05', 'MMM d, yyyy', 'bn-BD'), /মার্চ ৫, ২০২৬/);
   assert.equal(formatDate('2026-03-05', 'yyyy-MM-dd', 'en-US'), '2026-03-05');
   assert.match(formatMoney('1234.5', 'BDT', {}, 'bn-BD'), /১,২৩৪\.৫০/);
+  assert.equal(formatMoney('1234.5', 'BDT', {}, 'en-US'), '৳1,234.50');
   assert.equal(formatPercent(80.5, 1, 'bn-BD'), '৮০.৫%');
   assert.equal(formatPercent(null, 1, 'bn-BD'), '—');
   assert.equal(localizeDigits('Page 12 / 30', 'bn'), 'Page ১২ / ৩০');

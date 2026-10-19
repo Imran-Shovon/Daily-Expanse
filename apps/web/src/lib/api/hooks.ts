@@ -18,6 +18,7 @@ import {
   loansApi,
   recurringApi,
   reportsApi,
+  savingsApi,
   transactionsApi,
   type BudgetInput,
   type CategoryInput,
@@ -25,6 +26,8 @@ import {
   type RangeParams,
   type RecurringInput,
   type RepaymentInput,
+  type SavingsEntryInput,
+  type SavingsHistoryFilters,
   type TransactionFilters,
   type TransactionInput,
 } from './endpoints';
@@ -46,6 +49,8 @@ export const queryKeys = {
   recurring: () => ['recurring'] as const,
   recurringExecutions: (id: string) => ['recurring', id, 'executions'] as const,
   loans: () => ['loans'] as const,
+  savings: () => ['savings', 'summary'] as const,
+  savingsHistory: (filters: SavingsHistoryFilters) => ['savings', 'history', filters] as const,
 };
 
 const FINANCIAL_ROOTS = new Set([
@@ -57,6 +62,7 @@ const FINANCIAL_ROOTS = new Set([
   'categories',
   'recurring',
   'loans',
+  'savings',
 ]);
 
 /** Any write can affect totals, budgets and counts, so refresh every financial view. */
@@ -332,4 +338,32 @@ export function useDeleteRepayment() {
       loansApi.removeRepayment(id, repaymentId),
     { success: 'Repayment removed', error: 'Could not remove repayment' },
   );
+}
+
+/* Savings ------------------------------------------------------------------ */
+
+export function useSavingsSummary() {
+  return useQuery({ queryKey: queryKeys.savings(), queryFn: () => savingsApi.summary() });
+}
+
+export function useSavingsHistory(filters: SavingsHistoryFilters) {
+  return useQuery({
+    queryKey: queryKeys.savingsHistory(filters),
+    queryFn: () => savingsApi.entries(filters),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAddSavingsEntry() {
+  return useFinancialMutation((input: SavingsEntryInput) => savingsApi.add(input), {
+    success: (entry) => (entry.type === 'DEPOSIT' ? 'Added to savings' : 'Taken out of savings'),
+    error: 'Could not update savings',
+  });
+}
+
+export function useDeleteSavingsEntry() {
+  return useFinancialMutation((id: string) => savingsApi.remove(id), {
+    success: 'Entry removed',
+    error: 'Could not remove entry',
+  });
 }

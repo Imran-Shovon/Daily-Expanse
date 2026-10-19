@@ -17,6 +17,7 @@ import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RecurringTransactionsModule } from './recurring/recurring.module';
 import { ReportsModule } from './reports/reports.module';
+import { SavingsModule } from './savings/savings.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 
@@ -55,6 +56,7 @@ import { UsersModule } from './users/users.module';
     ReportsModule,
     RecurringTransactionsModule,
     LoansModule,
+    SavingsModule,
   ],
   controllers: [HealthController],
   providers: [

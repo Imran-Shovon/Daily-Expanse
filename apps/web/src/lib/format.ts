@@ -17,6 +17,8 @@ export function formatMoney(
     const formatted = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
+      // "৳1,234.50" rather than "BDT 1,234.50" in English.
+      currencyDisplay: 'narrowSymbol',
       notation: opts.compact ? 'compact' : 'standard',
       minimumFractionDigits: opts.compact ? 0 : 2,
       maximumFractionDigits: opts.compact ? 1 : 2,

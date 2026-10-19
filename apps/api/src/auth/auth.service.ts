@@ -46,7 +46,7 @@ export class AuthService {
             email: dto.email,
             name: dto.name,
             passwordHash,
-            currency: dto.currency ?? 'USD',
+            currency: dto.currency ?? 'BDT',
             timezone: dto.timezone ?? 'UTC',
           },
         });

@@ -38,6 +38,11 @@ enum RecurrenceFrequency {
   YEARLY
 }
 
+enum SavingsEntryType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
 enum BudgetPeriod {
   WEEKLY
   MONTHLY
@@ -49,7 +54,7 @@ model User {
   email            String   @unique
   passwordHash     String
   name             String
-  currency         String   @default("USD") @db.VarChar(3)
+  currency         String   @default("BDT") @db.VarChar(3)
   timezone         String   @default("UTC")
   dateFormat       String   @default("yyyy-MM-dd")
   theme            String   @default("system")
@@ -64,6 +69,7 @@ model User {
   budgets               Budget[]
   recurringTransactions RecurringTransaction[]
   loans                 Loan[]
+  savingsEntries        SavingsEntry[]
 
   @@map("users")
 }
@@ -253,4 +259,26 @@ model LoanRepayment {
 
   @@index([loanId, paidOn])
   @@map("loan_repayments")
+}
+
+/// One deposit into or withdrawal from the user's savings. The balance is the sum of all
+/// entries. Like loans, savings are tracked apart from transactions: moving money into
+/// savings is neither income nor an expense.
+model SavingsEntry {
+  id        String           @id @default(cuid())
+  userId    String
+  type      SavingsEntryType
+  amount    Decimal          @db.Decimal(14, 2)
+  date      DateTime         @db.Date
+  /// Where deposited money came from (deposits only).
+  source    String?          @db.VarChar(80)
+  /// What withdrawn money was used for (withdrawals only).
+  purpose   String?          @db.VarChar(80)
+  notes     String?          @db.VarChar(500)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("savings_entries")
 }

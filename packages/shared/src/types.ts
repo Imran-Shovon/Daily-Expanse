@@ -5,6 +5,7 @@ import type {
   PaymentMethod,
   RecurrenceFrequency,
   ReportGranularity,
+  SavingsEntryType,
   Theme,
   TransactionType,
 } from './constants';
@@ -266,4 +267,28 @@ export interface LoansOverview {
     overdueCount: number;
   };
   loans: Loan[];
+}
+
+export interface SavingsEntry {
+  id: string;
+  type: SavingsEntryType;
+  amount: Money;
+  date: IsoDate;
+  /** Where the money came from; set on deposits. */
+  source: string | null;
+  /** What the money was used for; set on withdrawals. */
+  purpose: string | null;
+  notes: string | null;
+  /** Savings balance right after this entry, in date order. */
+  balanceAfter: Money;
+  createdAt: string;
+}
+
+export interface SavingsSummary {
+  balance: Money;
+  totalAdded: Money;
+  totalTakenOut: Money;
+  /** Entries dated in the current month (user time zone). */
+  thisMonth: { added: Money; takenOut: Money };
+  entryCount: number;
 }

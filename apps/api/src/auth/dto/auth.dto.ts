@@ -35,7 +35,7 @@ export class RegisterDto {
   @Matches(PASSWORD_RULE, { message: PASSWORD_MESSAGE })
   password: string;
 
-  @ApiPropertyOptional({ example: 'USD', enum: CURRENCIES })
+  @ApiPropertyOptional({ example: 'BDT', enum: CURRENCIES, default: 'BDT' })
   @IsOptional()
   @IsIn(CURRENCIES)
   currency?: string;
