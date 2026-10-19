@@ -132,6 +132,29 @@
   ::selection {
     background: color-mix(in oklch, var(--primary) 25%, transparent);
   }
+  /* Tailwind v4 dropped the pointer cursor on buttons; restore it for everything clickable. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='switch'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='combobox'],
+  [role='menuitem'],
+  [role='option'],
+  a[href],
+  summary,
+  select,
+  label[for],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='date']::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {
