@@ -86,19 +86,24 @@ function RecurringRow({
 
   return (
     <li className={cn(!item.isActive && 'bg-muted/20')}>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
+      {/* On phones the amount and next run move to a second line under the title. */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-5 py-4 sm:flex sm:gap-x-4">
         <CategoryIcon icon={item.category.icon} color={item.category.color} />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 font-medium">
             <span className="truncate">{item.title}</span>
             {finished ? (
-              <Badge variant="secondary">{tr('Finished')}</Badge>
+              <Badge variant="secondary" className="hidden shrink-0 sm:inline-flex">
+                {tr('Finished')}
+              </Badge>
             ) : !item.isActive ? (
-              <Badge variant="outline">{tr('Paused')}</Badge>
+              <Badge variant="outline" className="hidden shrink-0 sm:inline-flex">
+                {tr('Paused')}
+              </Badge>
             ) : null}
           </p>
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-            <Repeat className="size-3" aria-hidden />
+            <Repeat className="size-3 shrink-0" aria-hidden />
             {describeFrequency(item.frequency, item.interval, language)} · {item.category.name}
             {item.endDate && (
               <>
@@ -108,8 +113,8 @@ function RecurringRow({
             )}
           </p>
         </div>
-        <div className="text-right">
-          <Money amount={item.amount} type={item.type} />
+        <div className="order-last col-span-full flex items-baseline justify-between gap-3 pl-12 sm:order-none sm:block sm:pl-0 sm:text-right">
+          <Money amount={item.amount} type={item.type} className="whitespace-nowrap" />
           <p className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
             <CalendarClock className="size-3" aria-hidden />
             {finished ? (

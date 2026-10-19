@@ -356,20 +356,24 @@ export function ReportsView() {
                       <TableCell className="font-medium whitespace-nowrap">
                         {localizePeriodLabel(p.label, language)}
                       </TableCell>
-                      <TableCell className="text-right tabular">{money(p.income)}</TableCell>
-                      <TableCell className="text-right tabular">{money(p.expenses)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular">
+                        {money(p.income)}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular">
+                        {money(p.expenses)}
+                      </TableCell>
                       <TableCell
                         className={cn(
-                          'text-right tabular',
+                          'text-right whitespace-nowrap tabular',
                           Number(p.net) < 0 && 'text-destructive',
                         )}
                       >
                         {money(p.net, { signed: true })}
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular">
+                      <TableCell className="text-right whitespace-nowrap text-muted-foreground tabular">
                         {formatPercent(p.savingsRate, undefined, locale)}
                       </TableCell>
-                      <TableCell className="hidden text-right tabular sm:table-cell">
+                      <TableCell className="hidden text-right whitespace-nowrap tabular sm:table-cell">
                         {money(p.cumulativeNet)}
                       </TableCell>
                     </TableRow>

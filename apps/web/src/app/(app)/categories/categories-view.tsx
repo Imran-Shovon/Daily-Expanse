@@ -57,7 +57,7 @@ function CategoryBudget({
   return (
     <button
       onClick={onSet}
-      className="w-36 rounded-lg px-2 py-1 text-left outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-44"
+      className="w-full rounded-lg px-2 py-1 text-left outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-44"
       aria-label={tr('Edit budget for {v0}', { v0: name })}
     >
       <p className="flex justify-between gap-2 text-xs">
@@ -118,7 +118,11 @@ function CategoryList({
   return (
     <ul className="divide-y">
       {items.map((c) => (
-        <li key={c.id} className="group flex items-center gap-3 px-5 py-3">
+        // On phones the budget moves to its own line so the name keeps its width.
+        <li
+          key={c.id}
+          className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-5 py-3 sm:flex"
+        >
           <CategoryIcon icon={c.icon} color={c.color} />
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2 truncate font-medium">
@@ -138,11 +142,13 @@ function CategoryList({
             </p>
           </div>
           {c.type === 'EXPENSE' && budgets && (
-            <CategoryBudget
-              name={c.name}
-              budget={findCategoryBudget(budgets, c.id)}
-              onSet={() => onBudget(c, findCategoryBudget(budgets, c.id))}
-            />
+            <div className="order-last col-span-full -ml-2 pl-12 sm:order-none sm:ml-0 sm:pl-0">
+              <CategoryBudget
+                name={c.name}
+                budget={findCategoryBudget(budgets, c.id)}
+                onSet={() => onBudget(c, findCategoryBudget(budgets, c.id))}
+              />
+            </div>
           )}
           <div className="flex gap-1">
             <Button

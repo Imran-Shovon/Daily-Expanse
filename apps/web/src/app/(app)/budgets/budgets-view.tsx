@@ -64,6 +64,17 @@ function BudgetMenu({
   );
 }
 
+/** Keeps each date whole so a narrow screen wraps only between the two dates. */
+function DateRange({ from, to }: { from: string; to: string }) {
+  const fmtDate = useDateFormatter();
+  return (
+    <>
+      <span className="whitespace-nowrap">{fmtDate(from)}</span> –{' '}
+      <span className="whitespace-nowrap">{fmtDate(to)}</span>
+    </>
+  );
+}
+
 const budgetName = (b: Budget) => b.name ?? b.category?.name ?? '';
 
 export function BudgetsView() {
@@ -149,7 +160,7 @@ export function BudgetsView() {
                       </span>
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {fmtDate(b.status!.periodStart)} – {fmtDate(b.status!.periodEnd)}
+                      <DateRange from={b.status!.periodStart} to={b.status!.periodEnd} />
                     </p>
                   </div>
                   <div className="flex items-center gap-3 md:flex-col md:items-end">
@@ -200,8 +211,8 @@ export function BudgetsView() {
                           {budgetName(b) || tr('Overall budget')}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {tr(BUDGET_PERIOD_LABELS[b.period])} · {fmtDate(b.status!.periodStart)} –{' '}
-                          {fmtDate(b.status!.periodEnd)}
+                          {tr(BUDGET_PERIOD_LABELS[b.period])} ·{' '}
+                          <DateRange from={b.status!.periodStart} to={b.status!.periodEnd} />
                         </p>
                       </div>
                       <BudgetMenu

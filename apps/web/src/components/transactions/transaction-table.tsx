@@ -162,11 +162,18 @@ export function TransactionTable({
                     />
                   )}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {t.category.name} · <FormattedDate date={t.date} />
+                {/* The date always shows in full; a long category name gives way. */}
+                <p className="flex min-w-0 gap-1 text-xs text-muted-foreground">
+                  <FormattedDate date={t.date} className="shrink-0" />
+                  <span aria-hidden>·</span>
+                  <span className="truncate">{t.category.name}</span>
                 </p>
               </div>
-              <Money amount={t.amount} type={t.type} className="text-sm" />
+              <Money
+                amount={t.amount}
+                type={t.type}
+                className="shrink-0 text-sm whitespace-nowrap"
+              />
             </Link>
             {!compact && (
               <RowActions

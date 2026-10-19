@@ -106,8 +106,8 @@ function LoanCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="truncate font-medium">{loan.lender}</p>
-              <Badge variant={badge.variant}>
+              <p className="min-w-0 truncate font-medium">{loan.lender}</p>
+              <Badge variant={badge.variant} className="shrink-0">
                 {loan.status === 'overdue' && <AlertTriangle />}
                 {tr(badge.label)}
               </Badge>

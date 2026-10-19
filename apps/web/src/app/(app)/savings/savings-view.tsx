@@ -86,7 +86,8 @@ function HistoryRow({ entry, onRemove }: { entry: SavingsEntry; onRemove: () => 
     <li className="flex items-center gap-3 px-5 py-3">
       <span
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-lg',
+          // The +/− sign and colour already show the direction, so phones skip the icon.
+          'hidden size-9 shrink-0 items-center justify-center rounded-lg sm:flex',
           deposit
             ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
             : 'bg-muted text-muted-foreground',
@@ -101,22 +102,28 @@ function HistoryRow({ entry, onRemove }: { entry: SavingsEntry; onRemove: () => 
             ? tr(detail)
             : entry.notes || (deposit ? tr('Added to savings') : tr('Taken out of savings'))}
         </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {fmtDate(entry.date)} · {deposit ? tr('Source of funds') : tr('Purpose')}
-          {detail && entry.notes && ` · ${entry.notes}`}
+        <p className="flex min-w-0 gap-1 text-xs text-muted-foreground">
+          <span className="shrink-0">{fmtDate(entry.date)}</span>
+          <span aria-hidden>·</span>
+          <span className="truncate">
+            {detail && entry.notes ? entry.notes : deposit ? tr('Source of funds') : tr('Purpose')}
+          </span>
+        </p>
+        <p className="text-xs whitespace-nowrap text-muted-foreground tabular sm:hidden">
+          {tr('Balance {v0}', { v0: money(entry.balanceAfter) })}
         </p>
       </div>
-      <div className="text-right">
+      <div className="shrink-0 self-start text-right sm:self-center">
         <p
           className={cn(
-            'text-sm font-semibold tabular',
+            'text-sm font-semibold whitespace-nowrap tabular',
             deposit && 'text-emerald-700 dark:text-emerald-400',
           )}
         >
           {deposit ? '+' : '−'}
           {money(entry.amount)}
         </p>
-        <p className="text-xs text-muted-foreground tabular">
+        <p className="hidden text-xs text-muted-foreground tabular sm:block">
           {tr('Balance {v0}', { v0: money(entry.balanceAfter) })}
         </p>
       </div>

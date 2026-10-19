@@ -5,8 +5,10 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card"
+      // min-w-0 lets a card shrink inside grid and flex layouts, so long text truncates
+      // instead of pushing the page wider than a phone screen.
       className={cn(
-        'rounded-xl border bg-card text-card-foreground shadow-[0_1px_2px_rgb(0_0_0/0.03)]',
+        'min-w-0 rounded-xl border bg-card text-card-foreground shadow-[0_1px_2px_rgb(0_0_0/0.03)]',
         className,
       )}
       {...props}
