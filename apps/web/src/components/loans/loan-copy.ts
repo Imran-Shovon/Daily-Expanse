@@ -26,6 +26,8 @@ export const LOAN_COPY: Record<
     oneEntry: string;
     manyEntries: string;
     removeEntry: string;
+    editEntry: string;
+    editTitle: string;
     summaryOutstanding: string;
     summaryTotal: string;
     summaryRepaid: string;
@@ -65,6 +67,8 @@ export const LOAN_COPY: Record<
     oneEntry: '1 repayment',
     manyEntries: '{count} repayments',
     removeEntry: 'Remove repayment of {v0}',
+    editEntry: 'Edit repayment of {v0}',
+    editTitle: 'Edit repayment',
     summaryOutstanding: 'You still owe',
     summaryTotal: 'Total borrowed',
     summaryRepaid: 'Total repaid',
@@ -104,6 +108,8 @@ export const LOAN_COPY: Record<
     oneEntry: '1 collection',
     manyEntries: '{count} collections',
     removeEntry: 'Remove collection of {v0}',
+    editEntry: 'Edit collection of {v0}',
+    editTitle: 'Edit collection',
     summaryOutstanding: 'Owed to you',
     summaryTotal: 'Total lent',
     summaryRepaid: 'Total collected',

@@ -259,6 +259,11 @@ export const loansApi = {
   remove: (id: string) => api<void>(`/loans/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   repay: (id: string, body: RepaymentInput) =>
     api<Loan>(`/loans/${encodeURIComponent(id)}/repayments`, { method: 'POST', body }),
+  updateRepayment: (id: string, repaymentId: string, body: Partial<RepaymentInput>) =>
+    api<Loan>(`/loans/${encodeURIComponent(id)}/repayments/${encodeURIComponent(repaymentId)}`, {
+      method: 'PATCH',
+      body,
+    }),
   removeRepayment: (id: string, repaymentId: string) =>
     api<Loan>(`/loans/${encodeURIComponent(id)}/repayments/${encodeURIComponent(repaymentId)}`, {
       method: 'DELETE',

@@ -159,6 +159,46 @@ describe('Loans (e2e)', () => {
       .expect(400);
   });
 
+  it('edits a repayment within what the loan allows', async () => {
+    const loan = (
+      await borrow({ counterparty: 'Editable', amount: '1000', loanDate: '2026-03-01' }).expect(201)
+    ).body as Loan;
+    await repay(loan.id, { amount: '300', paidOn: '2026-03-10' }).expect(201);
+    const second = (await repay(loan.id, { amount: '200', paidOn: '2026-03-20' }).expect(201))
+      .body as Loan;
+    const target = second.repayments.find((r) => r.amount === '200.00')!;
+    const edit = (body: Record<string, unknown>, as: TestUser = user) =>
+      http.patch(`${API}/loans/${loan.id}/repayments/${target.id}`).set(as.auth).send(body);
+
+    const edited = (
+      await edit({ amount: '450.25', paidOn: '2026-03-25', notes: 'Corrected amount' }).expect(200)
+    ).body as Loan;
+    expect(edited).toMatchObject({ repaid: '750.25', outstanding: '249.75' });
+    expect(edited.repayments[0]).toMatchObject({
+      id: target.id,
+      amount: '450.25',
+      paidOn: '2026-03-25',
+      notes: 'Corrected amount',
+    });
+
+    // 300 is already repaid elsewhere, so this repayment can be at most 700.
+    await edit({ amount: '700.01' })
+      .expect(400)
+      .expect((res) => expect(res.body.message).toMatch(/700\.00/));
+    const settled = (await edit({ amount: '700' }).expect(200)).body as Loan;
+    expect(settled.status).toBe('paid');
+
+    await edit({ paidOn: '2026-02-28' }).expect(400);
+    await edit({ amount: '0' }).expect(400);
+    await edit({ notes: null }).expect(200);
+    await edit({ amount: '10' }, other).expect(404);
+    await http
+      .patch(`${API}/loans/${loan.id}/repayments/not-a-real-id`)
+      .set(user.auth)
+      .send({ amount: '10' })
+      .expect(404);
+  });
+
   it("never exposes or changes another user's loans", async () => {
     const loan = (await borrow({ counterparty: 'Private', amount: '100' }).expect(201))
       .body as Loan;

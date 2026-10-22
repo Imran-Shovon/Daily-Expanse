@@ -11,7 +11,12 @@ import { sumMoney, toMoney } from '../common/finance/money';
 import { fromDbDate, PlainDate, toDbDate } from '../common/utils/plain-date';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
-import { CreateLoanDto, CreateRepaymentDto, UpdateLoanDto } from './dto/loans.dto';
+import {
+  CreateLoanDto,
+  CreateRepaymentDto,
+  UpdateLoanDto,
+  UpdateRepaymentDto,
+} from './dto/loans.dto';
 import { loanBalance } from './loan-math';
 
 type LoanWithRepayments = Loan & { repayments: LoanRepayment[] };
@@ -137,6 +142,50 @@ export class LoansService {
 
       await tx.loanRepayment.create({
         data: { loanId: id, amount, paidOn: toDbDate(paidOn), notes: dto.notes || null },
+      });
+      return tx.loan.findUniqueOrThrow({ where: { id }, include: withRepayments });
+    });
+    return toLoanDto(loan, today);
+  }
+
+  async updateRepayment(
+    userId: string,
+    id: string,
+    repaymentId: string,
+    dto: UpdateRepaymentDto,
+  ): Promise<LoanDto> {
+    const { today } = await this.users.today(userId);
+    const loan = await this.prisma.$transaction(async (tx) => {
+      // Same lock as adding a repayment, so an edit can never push the loan past its amount.
+      const existing = await lockOwnedLoan(tx, userId, id);
+      const repayment = existing.repayments.find((r) => r.id === repaymentId);
+      if (!repayment) throw new NotFoundException('Repayment not found');
+
+      const paidOn = dto.paidOn ?? fromDbDate(repayment.paidOn);
+      if (paidOn < fromDbDate(existing.loanDate)) {
+        throw new BadRequestException('A repayment cannot be dated before the loan date');
+      }
+      const amount = dto.amount !== undefined ? new Prisma.Decimal(dto.amount) : repayment.amount;
+      // What is left once this repayment is taken out, i.e. the most it may now be.
+      const { outstanding: available } = loanBalance(
+        existing.amount,
+        existing.repayments.filter((r) => r.id !== repaymentId).map((r) => r.amount),
+        null,
+        today,
+      );
+      if (amount.gt(available)) {
+        throw new BadRequestException(
+          `The repayment is more than the ${toMoney(available)} outstanding`,
+        );
+      }
+
+      await tx.loanRepayment.update({
+        where: { id: repaymentId },
+        data: {
+          amount,
+          paidOn: toDbDate(paidOn),
+          ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
+        },
       });
       return tx.loan.findUniqueOrThrow({ where: { id }, include: withRepayments });
     });

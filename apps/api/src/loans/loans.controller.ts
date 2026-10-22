@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUserId } from '../common/auth/decorators';
-import { CreateLoanDto, CreateRepaymentDto, UpdateLoanDto } from './dto/loans.dto';
+import {
+  CreateLoanDto,
+  CreateRepaymentDto,
+  UpdateLoanDto,
+  UpdateRepaymentDto,
+} from './dto/loans.dto';
 import { LoansService } from './loans.service';
 
 @ApiTags('loans')
@@ -58,6 +63,17 @@ export class LoansController {
     @Body() dto: CreateRepaymentDto,
   ): Promise<Loan> {
     return this.loans.addRepayment(userId, id, dto);
+  }
+
+  @Patch(':id/repayments/:repaymentId')
+  @ApiOperation({ summary: 'Edit a repayment (total repaid cannot exceed the loan amount)' })
+  updateRepayment(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+    @Param('repaymentId') repaymentId: string,
+    @Body() dto: UpdateRepaymentDto,
+  ): Promise<Loan> {
+    return this.loans.updateRepayment(userId, id, repaymentId, dto);
   }
 
   @Delete(':id/repayments/:repaymentId')

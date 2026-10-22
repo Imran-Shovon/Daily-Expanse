@@ -1,7 +1,7 @@
 'use client';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
-import type { Loan } from '@expense/shared';
+import type { Loan, LoanRepayment } from '@expense/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api/client';
-import { useRepayLoan } from '@/lib/api/hooks';
+import { useRepayLoan, useUpdateRepayment } from '@/lib/api/hooks';
 import { useUser } from '@/lib/auth/auth-provider';
 import { isValidAmount, todayIn } from '@/lib/format';
 import { LOAN_COPY } from './loan-copy';
@@ -27,14 +27,19 @@ import { LOAN_COPY } from './loan-copy';
 /** Compares 2-decimal money strings exactly by converting to integer cents. */
 const cents = (amount: string) => Math.round(Number(amount) * 100);
 
-function schemaFor(loan: Loan) {
+/** Most this entry may be: what is outstanding, plus the entry's own amount when editing. */
+function maxFor(loan: Loan, repayment?: LoanRepayment | null): string {
+  return ((cents(loan.outstanding) + (repayment ? cents(repayment.amount) : 0)) / 100).toFixed(2);
+}
+
+function schemaFor(loan: Loan, max: string) {
   return z.object({
     amount: z
       .string()
       .trim()
       .refine(isValidAmount, 'Enter a positive amount with up to 2 decimal places')
       .refine(
-        (v) => !isValidAmount(v) || cents(v) <= cents(loan.outstanding),
+        (v) => !isValidAmount(v) || cents(v) <= cents(max),
         LOAN_COPY[loan.direction].repayTooMuch,
       ),
     paidOn: z
@@ -49,9 +54,12 @@ type Values = z.infer<ReturnType<typeof schemaFor>>;
 
 export function RepayDialog({
   loan,
+  repayment,
   onOpenChange,
 }: {
   loan: Loan | null;
+  /** Set to edit an existing repayment instead of recording a new one. */
+  repayment?: LoanRepayment | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t: tr } = useLanguage();
@@ -61,38 +69,68 @@ export function RepayDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {loan && tr(LOAN_COPY[loan.direction].repayTitle, { name: loan.counterparty })}
+            {loan &&
+              (repayment
+                ? tr(LOAN_COPY[loan.direction].editTitle)
+                : tr(LOAN_COPY[loan.direction].repayTitle, { name: loan.counterparty }))}
           </DialogTitle>
           <DialogDescription>
             {loan &&
-              tr(LOAN_COPY[loan.direction].repayDescription, {
-                v0: money(loan.outstanding),
-                name: loan.counterparty,
-              })}
+              (repayment
+                ? tr('Up to {v0} can be recorded for this entry.', {
+                    v0: money(maxFor(loan, repayment)),
+                  })
+                : tr(LOAN_COPY[loan.direction].repayDescription, {
+                    v0: money(loan.outstanding),
+                    name: loan.counterparty,
+                  }))}
           </DialogDescription>
         </DialogHeader>
-        {loan && <RepayForm key={loan.id} loan={loan} onDone={() => onOpenChange(false)} />}
+        {loan && (
+          <RepayForm
+            key={`${loan.id}-${repayment?.id ?? 'new'}`}
+            loan={loan}
+            repayment={repayment ?? undefined}
+            onDone={() => onOpenChange(false)}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
+function RepayForm({
+  loan,
+  repayment,
+  onDone,
+}: {
+  loan: Loan;
+  repayment?: LoanRepayment;
+  onDone: () => void;
+}) {
   const { t: tr } = useLanguage();
   const user = useUser();
   const repay = useRepayLoan();
+  const update = useUpdateRepayment();
   const copy = LOAN_COPY[loan.direction];
+  const max = maxFor(loan, repayment);
   const { register, handleSubmit, formState, setError, setValue } = useForm<Values>({
-    resolver: zodResolver(schemaFor(loan)),
-    defaultValues: { amount: '', paidOn: todayIn(user.timezone), notes: '' },
+    resolver: zodResolver(schemaFor(loan, max)),
+    defaultValues: {
+      amount: repayment?.amount ?? '',
+      paidOn: repayment?.paidOn ?? todayIn(user.timezone),
+      notes: repayment?.notes ?? '',
+    },
   });
 
   const submit = handleSubmit(async (v) => {
     try {
-      await repay.mutateAsync({
-        id: loan.id,
-        input: { amount: v.amount, paidOn: v.paidOn, notes: v.notes || null },
-      });
+      const input = { amount: v.amount, paidOn: v.paidOn, notes: v.notes || null };
+      if (repayment) {
+        await update.mutateAsync({ id: loan.id, repaymentId: repayment.id, input });
+      } else {
+        await repay.mutateAsync({ id: loan.id, input });
+      }
       onDone();
     } catch (error) {
       if (error instanceof ApiError) {
@@ -114,9 +152,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
             <button
               type="button"
               className="text-xs font-medium text-primary hover:underline"
-              onClick={() =>
-                setValue('amount', loan.outstanding, { shouldValidate: true, shouldDirty: true })
-              }
+              onClick={() => setValue('amount', max, { shouldValidate: true, shouldDirty: true })}
             >
               {tr(copy.repayInFull)}
             </button>
@@ -160,7 +196,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
         </Button>
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          {tr(copy.repaySubmit)}
+          {repayment ? tr('Save changes') : tr(copy.repaySubmit)}
         </Button>
       </div>
     </form>

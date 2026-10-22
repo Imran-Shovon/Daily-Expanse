@@ -77,12 +77,14 @@ function LoanCard({
   onRepay,
   onEdit,
   onDelete,
+  onEditRepayment,
   onUndoRepayment,
 }: {
   loan: Loan;
   onRepay: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onEditRepayment: (repayment: LoanRepayment) => void;
   onUndoRepayment: (repayment: LoanRepayment) => void;
 }) {
   const { t: tr, locale } = useLanguage();
@@ -202,7 +204,7 @@ function LoanCard({
           {showHistory && (
             <ul id={historyId} className="divide-y border-t bg-muted/20">
               {loan.repayments.map((r) => (
-                <li key={r.id} className="flex items-center gap-3 px-5 py-2.5">
+                <li key={r.id} className="flex items-center gap-1 py-2.5 pr-3 pl-5">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium tabular">{money(r.amount)}</p>
                     <p className="truncate text-xs text-muted-foreground">
@@ -210,6 +212,14 @@ function LoanCard({
                       {r.notes && ` · ${r.notes}`}
                     </p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={tr(copy.editEntry, { v0: money(r.amount) })}
+                    onClick={() => onEditRepayment(r)}
+                  >
+                    <Pencil className="text-muted-foreground" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -236,7 +246,10 @@ export function LoansView() {
   const { money } = useFormatters();
   const [tab, setTab] = React.useState<LoanDirection>('BORROWED');
   const [editing, setEditing] = React.useState<{ open: boolean; loan?: Loan }>({ open: false });
-  const [repaying, setRepaying] = React.useState<Loan | null>(null);
+  const [repaying, setRepaying] = React.useState<{
+    loan: Loan;
+    repayment?: LoanRepayment;
+  } | null>(null);
   const [deleting, setDeleting] = React.useState<Loan | null>(null);
   const [undoing, setUndoing] = React.useState<{ loan: Loan; repayment: LoanRepayment } | null>(
     null,
@@ -253,7 +266,8 @@ export function LoansView() {
     <LoanCard
       key={loan.id}
       loan={loan}
-      onRepay={() => setRepaying(loan)}
+      onRepay={() => setRepaying({ loan })}
+      onEditRepayment={(repayment) => setRepaying({ loan, repayment })}
       onEdit={() => setEditing({ open: true, loan })}
       onDelete={() => setDeleting(loan)}
       onUndoRepayment={(repayment) => setUndoing({ loan, repayment })}
@@ -389,7 +403,11 @@ export function LoansView() {
         defaultDirection={tab}
         onOpenChange={(isOpen) => setEditing((d) => ({ ...d, open: isOpen }))}
       />
-      <RepayDialog loan={repaying} onOpenChange={(isOpen) => !isOpen && setRepaying(null)} />
+      <RepayDialog
+        loan={repaying?.loan ?? null}
+        repayment={repaying?.repayment}
+        onOpenChange={(isOpen) => !isOpen && setRepaying(null)}
+      />
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}

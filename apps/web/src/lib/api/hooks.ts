@@ -339,6 +339,14 @@ export function useRepayLoan() {
   );
 }
 
+export function useUpdateRepayment() {
+  return useFinancialMutation(
+    ({ id, repaymentId, input }: { id: string; repaymentId: string; input: RepaymentInput }) =>
+      loansApi.updateRepayment(id, repaymentId, input),
+    { success: 'Changes saved', error: 'Could not save changes' },
+  );
+}
+
 export function useDeleteRepayment() {
   return useFinancialMutation(
     ({ id, repaymentId }: { id: string; repaymentId: string }) =>

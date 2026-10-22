@@ -686,4 +686,10 @@ export const bangla: Record<string, string> = {
   'The amount cannot be less than what has already been repaid':
     'পরিমাণ ইতিমধ্যে পরিশোধ হওয়া টাকার চেয়ে কম হতে পারে না',
   '1 open loan': '১টি চলমান ঋণ',
+  'Changes saved': 'পরিবর্তন সংরক্ষণ হয়েছে',
+  'Edit repayment': 'পরিশোধ সম্পাদনা',
+  'Edit collection': 'আদায় সম্পাদনা',
+  'Edit repayment of {v0}': '{v0} এর পরিশোধ সম্পাদনা করুন',
+  'Edit collection of {v0}': '{v0} এর আদায় সম্পাদনা করুন',
+  'Up to {v0} can be recorded for this entry.': 'এই এন্ট্রিতে সর্বোচ্চ {v0} লেখা যাবে।',
 };

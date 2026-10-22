@@ -94,3 +94,23 @@ export class CreateRepaymentDto {
   @MaxLength(500)
   notes?: string | null;
 }
+
+export class UpdateRepaymentDto {
+  @ApiPropertyOptional({ example: '1500.00', description: 'Total repaid cannot exceed the loan' })
+  @IsOptional()
+  @MoneyTransform()
+  @IsMoney()
+  amount?: string;
+
+  @ApiPropertyOptional({ example: '2026-11-01' })
+  @IsOptional()
+  @IsPlainDate()
+  paidOn?: string;
+
+  @ApiPropertyOptional({ description: 'null or empty removes the note' })
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(500)
+  notes?: string | null;
+}
