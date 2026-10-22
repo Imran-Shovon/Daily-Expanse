@@ -70,11 +70,12 @@ export class UpdateProfileDto {
 }
 
 export class ChangePasswordDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Required unless the account has no password yet' })
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(128)
-  currentPassword: string;
+  currentPassword?: string;
 
   @ApiProperty({ minLength: 8 })
   @IsString()
@@ -85,11 +86,12 @@ export class ChangePasswordDto {
 }
 
 export class DeleteAccountDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Required unless the account has no password' })
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(128)
-  password: string;
+  password?: string;
 
   @ApiProperty({ example: 'DELETE', description: 'Must be exactly "DELETE"' })
   @Equals('DELETE', { message: 'Type DELETE to confirm' })

@@ -23,6 +23,8 @@ export function toUserDto(user: User): UserDto {
     dateFormat: user.dateFormat as DateFormat,
     theme: user.theme as Theme,
     defaultDateRange: user.defaultDateRange as DateRangePreset,
+    hasPassword: user.passwordHash !== null,
+    googleLinked: user.googleId !== null,
     createdAt: user.createdAt.toISOString(),
   };
 }

@@ -57,7 +57,10 @@ enum BudgetPeriod {
 model User {
   id               String   @id @default(cuid())
   email            String   @unique
-  passwordHash     String
+  /// Null for accounts created with Google that have not set a password.
+  passwordHash     String?
+  /// Google account id (the OpenID "sub" claim) once the user signs in with Google.
+  googleId         String?  @unique
   name             String
   currency         String   @default("BDT") @db.VarChar(3)
   timezone         String   @default("UTC")

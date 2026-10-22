@@ -342,4 +342,11 @@ describe('Auth (e2e)', () => {
       expect(await prisma.category.count({ where: { userId: user.user.id } })).toBe(0);
     });
   });
+
+  describe('Google sign-in when not configured', () => {
+    it('reports Google as unavailable and refuses to start', async () => {
+      await http.get(`${API}/auth/providers`).expect(200).expect({ google: false });
+      await http.get(`${API}/auth/google`).expect(404);
+    });
+  });
 });

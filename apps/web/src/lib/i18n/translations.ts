@@ -692,4 +692,23 @@ export const bangla: Record<string, string> = {
   'Edit repayment of {v0}': '{v0} এর পরিশোধ সম্পাদনা করুন',
   'Edit collection of {v0}': '{v0} এর আদায় সম্পাদনা করুন',
   'Up to {v0} can be recorded for this entry.': 'এই এন্ট্রিতে সর্বোচ্চ {v0} লেখা যাবে।',
+  'Continue with Google': 'Google দিয়ে চালিয়ে যান',
+  'or use your email': 'অথবা আপনার ইমেইল ব্যবহার করুন',
+  'Google sign-in is connected.': 'Google সাইন-ইন যুক্ত আছে।',
+  'Set a password below to change your email.':
+    'ইমেইল পরিবর্তন করতে নিচে একটি পাসওয়ার্ড সেট করুন।',
+  'Password set': 'পাসওয়ার্ড সেট হয়েছে',
+  'Set a password': 'একটি পাসওয়ার্ড সেট করুন',
+  'You sign in with Google. Add a password to also sign in with your email.':
+    'আপনি Google দিয়ে সাইন ইন করেন। ইমেইল দিয়েও সাইন ইন করতে একটি পাসওয়ার্ড যোগ করুন।',
+  'Set password': 'পাসওয়ার্ড সেট করুন',
+  'Type DELETE to confirm.': 'নিশ্চিত করতে DELETE লিখুন।',
+  'Google sign-in was cancelled.': 'Google সাইন-ইন বাতিল করা হয়েছে।',
+  'This email is already connected to a different Google account.':
+    'এই ইমেইলটি ইতিমধ্যে অন্য একটি Google অ্যাকাউন্টের সাথে যুক্ত।',
+  'Your Google account email is not verified, so it cannot be used to sign in.':
+    'আপনার Google অ্যাকাউন্টের ইমেইল যাচাই করা নয়, তাই এটি দিয়ে সাইন ইন করা যাবে না।',
+  'Could not sign in with Google. Please try again.':
+    'Google দিয়ে সাইন ইন করা যায়নি। আবার চেষ্টা করুন।',
+  'Set a password before changing your email': 'ইমেইল পরিবর্তনের আগে একটি পাসওয়ার্ড সেট করুন',
 };

@@ -12,6 +12,8 @@ const PROTECTED = [
   '/categories',
   '/reports',
   '/recurring',
+  '/savings',
+  '/loans',
   '/settings',
 ];
 

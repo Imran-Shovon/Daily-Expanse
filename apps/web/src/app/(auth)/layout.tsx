@@ -12,7 +12,7 @@ function PreviewCard() {
   return (
     <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur">
       <p className="text-sm text-emerald-100/70">{tr('Saved this month')}</p>
-      <p className="mt-1 text-3xl font-semibold tracking-tight text-white">{number('$1,284.60')}</p>
+      <p className="mt-1 text-3xl font-semibold tracking-tight text-white">{number('৳1,284.60')}</p>
       <p className="mt-1 text-xs text-emerald-200/80">
         {tr('32% savings rate · on track with 4 budgets')}
       </p>

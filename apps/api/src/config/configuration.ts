@@ -81,6 +81,18 @@ class EnvironmentVariables {
   @IsString()
   @MinLength(16)
   CRON_SECRET?: string;
+
+  /**
+   * Google sign-in (OAuth client from Google Cloud Console). Both must be set to enable it;
+   * the redirect URI to register is WEB_URL + /api/v1/auth/google/callback.
+   */
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_SECRET?: string;
 }
 
 export type AppConfig = EnvironmentVariables;

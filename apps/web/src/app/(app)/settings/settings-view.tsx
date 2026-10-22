@@ -55,7 +55,7 @@ function Section({
   className,
 }: {
   title: string;
-  description: string;
+  description: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
@@ -118,7 +118,18 @@ function ProfileSection() {
     <form onSubmit={submit} noValidate>
       <Section
         title={tr('Profile')}
-        description={tr('Your name and the email you sign in with.')}
+        description={
+          user.googleLinked ? (
+            <>
+              {tr('Your name and the email you sign in with.')}{' '}
+              <span className="font-medium text-foreground">
+                {tr('Google sign-in is connected.')}
+              </span>
+            </>
+          ) : (
+            tr('Your name and the email you sign in with.')
+          )
+        }
         footer={
           <Button type="submit" disabled={!formState.isDirty || formState.isSubmitting}>
             {formState.isSubmitting && <Loader2 className="animate-spin" />}
@@ -143,10 +154,16 @@ function ProfileSection() {
               id="s-email"
               type="email"
               autoComplete="email"
+              readOnly={!user.hasPassword}
               aria-invalid={!!formState.errors.email}
               {...register('email')}
             />
             <FieldError message={formState.errors.email?.message} />
+            {!user.hasPassword && (
+              <p className="text-xs text-muted-foreground">
+                {tr('Set a password below to change your email.')}
+              </p>
+            )}
           </div>
         </div>
         {emailChanged && (
@@ -368,22 +385,24 @@ function PreferencesSection() {
 
 /* Security ---------------------------------------------------------------- */
 
-const passwordFormSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Enter your current password'),
-    newPassword: passwordSchema,
-    confirm: z.string(),
-  })
-  .refine((v) => v.newPassword === v.confirm, {
-    path: ['confirm'],
-    message: 'Passwords do not match',
-  });
+const passwordFormSchema = (hasPassword: boolean) =>
+  z
+    .object({
+      currentPassword: hasPassword ? z.string().min(1, 'Enter your current password') : z.string(),
+      newPassword: passwordSchema,
+      confirm: z.string(),
+    })
+    .refine((v) => v.newPassword === v.confirm, {
+      path: ['confirm'],
+      message: 'Passwords do not match',
+    });
 
 function SecuritySection() {
   const { t: tr } = useLanguage();
   const { applySession } = useAuth();
-  const form = useForm<z.infer<typeof passwordFormSchema>>({
-    resolver: zodResolver(passwordFormSchema),
+  const { hasPassword } = useUser();
+  const form = useForm<z.infer<ReturnType<typeof passwordFormSchema>>>({
+    resolver: zodResolver(passwordFormSchema(hasPassword)),
     defaultValues: { currentPassword: '', newPassword: '', confirm: '' },
   });
   const { register, handleSubmit, formState, reset, setError } = form;
@@ -391,12 +410,12 @@ function SecuritySection() {
   const submit = handleSubmit(async (v) => {
     try {
       const session = await usersApi.changePassword({
-        currentPassword: v.currentPassword,
+        ...(hasPassword ? { currentPassword: v.currentPassword } : {}),
         newPassword: v.newPassword,
       });
       applySession(session);
       reset();
-      toast.success(tr('Password changed'), {
+      toast.success(tr(hasPassword ? 'Password changed' : 'Password set'), {
         description: tr('Other devices have been signed out.'),
       });
     } catch (e) {
@@ -411,26 +430,32 @@ function SecuritySection() {
   return (
     <form onSubmit={submit} noValidate>
       <Section
-        title={tr('Password')}
-        description={tr('Changing your password signs you out everywhere else.')}
+        title={hasPassword ? tr('Password') : tr('Set a password')}
+        description={
+          hasPassword
+            ? tr('Changing your password signs you out everywhere else.')
+            : tr('You sign in with Google. Add a password to also sign in with your email.')
+        }
         footer={
           <Button type="submit" disabled={formState.isSubmitting}>
             {formState.isSubmitting && <Loader2 className="animate-spin" />}
-            {tr('Change password')}{' '}
+            {hasPassword ? tr('Change password') : tr('Set password')}
           </Button>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="pw-current">{tr('Current password')}</Label>
-            <PasswordInput
-              id="pw-current"
-              autoComplete="current-password"
-              aria-invalid={!!formState.errors.currentPassword}
-              {...register('currentPassword')}
-            />
-            <FieldError message={formState.errors.currentPassword?.message} />
-          </div>
+        <div className={cn('grid gap-4', hasPassword ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+          {hasPassword && (
+            <div className="space-y-1.5">
+              <Label htmlFor="pw-current">{tr('Current password')}</Label>
+              <PasswordInput
+                id="pw-current"
+                autoComplete="current-password"
+                aria-invalid={!!formState.errors.currentPassword}
+                {...register('currentPassword')}
+              />
+              <FieldError message={formState.errors.currentPassword?.message} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="pw-new">{tr('New password')}</Label>
             <PasswordInput
@@ -462,6 +487,7 @@ function SecuritySection() {
 function DangerZone() {
   const { t: tr } = useLanguage();
   const { logout } = useAuth();
+  const { hasPassword } = useUser();
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState('');
   const [confirmation, setConfirmation] = React.useState('');
@@ -500,12 +526,18 @@ function DangerZone() {
         )}
         confirmLabel="Delete account"
         onConfirm={async () => {
-          if (confirmation !== 'DELETE' || !password) {
-            setError(tr('Enter your password and type DELETE to confirm.'));
+          if (confirmation !== 'DELETE' || (hasPassword && !password)) {
+            setError(
+              tr(
+                hasPassword
+                  ? 'Enter your password and type DELETE to confirm.'
+                  : 'Type DELETE to confirm.',
+              ),
+            );
             throw new Error('not confirmed');
           }
           try {
-            await usersApi.deleteAccount({ password, confirmation });
+            await usersApi.deleteAccount({ ...(hasPassword ? { password } : {}), confirmation });
           } catch (e) {
             setError(errorMessage(e));
             throw e;
@@ -515,15 +547,17 @@ function DangerZone() {
         }}
       >
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="del-password">{tr('Password')}</Label>
-            <PasswordInput
-              id="del-password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          {hasPassword && (
+            <div className="space-y-1.5">
+              <Label htmlFor="del-password">{tr('Password')}</Label>
+              <PasswordInput
+                id="del-password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="del-confirm">
               {tr('Type')} <span className="font-mono font-semibold">DELETE</span>{' '}

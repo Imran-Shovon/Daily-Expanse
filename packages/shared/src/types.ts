@@ -50,7 +50,16 @@ export interface User {
   dateFormat: DateFormat;
   theme: Theme;
   defaultDateRange: DateRangePreset;
+  /** False for accounts created with Google that have not set a password yet. */
+  hasPassword: boolean;
+  /** True once the account has signed in with Google. */
+  googleLinked: boolean;
   createdAt: string;
+}
+
+/** Sign-in methods the server has configured. */
+export interface AuthProviders {
+  google: boolean;
 }
 
 export interface AuthResponse {

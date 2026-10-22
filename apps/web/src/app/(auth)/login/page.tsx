@@ -15,6 +15,7 @@ import {
   safeNext,
   useRedirectIfAuthenticated,
 } from '@/components/auth/auth-form-parts';
+import { GoogleSignIn, googleErrorMessage } from '@/components/auth/google-sign-in';
 import { FieldError } from '@/components/common/field-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,10 @@ export default function LoginPage() {
   });
   const { register, handleSubmit, formState } = form;
 
+  const googleError =
+    searchParams.get('error') === 'google'
+      ? tr(googleErrorMessage(searchParams.get('reason')))
+      : null;
   const notice = searchParams.get('expired')
     ? tr('Your session expired. Please sign in again.')
     : searchParams.get('reset')
@@ -62,9 +67,12 @@ export default function LoginPage() {
         title={tr('Welcome back')}
         description={tr('Sign in to see where your money is going.')}
       />
+      <div className="mb-4">
+        <GoogleSignIn next={safeNext(searchParams.get('next'))} />
+      </div>
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <FormAlert message={error} />
-        {!error && (
+        <FormAlert message={error ?? googleError} />
+        {!error && !googleError && (
           <FormAlert message={notice} tone={searchParams.get('reset') ? 'success' : 'info'} />
         )}
         <div className="space-y-1.5">

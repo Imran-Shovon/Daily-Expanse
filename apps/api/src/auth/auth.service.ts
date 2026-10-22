@@ -8,13 +8,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { createDefaultCategories } from '../categories/default-categories';
 import { toUserDto } from '../common/mappers';
+import { isValidTimeZone } from '../common/utils/plain-date';
 import type { AppConfig } from '../config/configuration';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
+import { GoogleProfile, GoogleSignInError } from './google-oauth.service';
 import { PasswordService } from './password.service';
 import { IssuedTokens, TokenService } from './token.service';
 
@@ -71,6 +73,66 @@ export class AuthService {
 
     const tokens = await this.tokens.issue(user.id, userAgent);
     return { user: toUserDto(user), tokens };
+  }
+
+  /**
+   * Signs in with a verified Google identity: an account already linked to this Google id,
+   * otherwise the account with the same (Google-verified) email, which gets linked, otherwise
+   * a new account without a password.
+   */
+  async signInWithGoogle(
+    profile: GoogleProfile,
+    options: { userAgent?: string; timezone?: string } = {},
+  ): Promise<AuthResult> {
+    const user = await this.findOrCreateGoogleUser(profile, options.timezone);
+    const tokens = await this.tokens.issue(user.id, options.userAgent);
+    return { user: toUserDto(user), tokens };
+  }
+
+  private async findOrCreateGoogleUser(
+    profile: GoogleProfile,
+    timezone?: string,
+    retry = true,
+  ): Promise<User> {
+    const linked = await this.prisma.user.findUnique({ where: { googleId: profile.sub } });
+    if (linked) return linked;
+
+    const byEmail = await this.prisma.user.findUnique({ where: { email: profile.email } });
+    if (byEmail) {
+      // A different Google account already owns this login; never silently swap it.
+      if (byEmail.googleId) throw new GoogleSignInError('account_linked_elsewhere');
+      return this.prisma.user.update({
+        where: { id: byEmail.id },
+        data: { googleId: profile.sub },
+      });
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            email: profile.email,
+            name: profile.name,
+            passwordHash: null,
+            googleId: profile.sub,
+            currency: 'BDT',
+            timezone: isValidTimeZone(timezone) ? timezone : 'UTC',
+          },
+        });
+        await createDefaultCategories(tx, created.id);
+        return created;
+      });
+    } catch (error) {
+      // Two first-time sign-ins raced; the other one created the account.
+      if (
+        retry &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return this.findOrCreateGoogleUser(profile, timezone, false);
+      }
+      throw error;
+    }
   }
 
   async refresh(refreshToken: string | undefined, userAgent?: string): Promise<AuthResult> {

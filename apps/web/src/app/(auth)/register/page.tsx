@@ -14,6 +14,7 @@ import {
   PasswordInput,
   useRedirectIfAuthenticated,
 } from '@/components/auth/auth-form-parts';
+import { GoogleSignIn } from '@/components/auth/google-sign-in';
 import { FieldError } from '@/components/common/field-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +65,9 @@ export default function RegisterPage() {
         title={tr('Create your account')}
         description={tr('Start tracking in under a minute. Categories are set up for you.')}
       />
+      <div className="mb-4">
+        <GoogleSignIn next="/dashboard" />
+      </div>
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormAlert message={error} />
         <div className="space-y-1.5">

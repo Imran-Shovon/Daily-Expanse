@@ -126,6 +126,16 @@ vercel deploy --prod   # production
 | `TRUST_PROXY` | `1` | Reverse proxies in front of the API (Next.js counts as one) |
 | `RECURRING_SCHEDULER_ENABLED` | `true` | In-process scheduler for recurring transactions |
 | `SWAGGER_ENABLED` | `true` | Serve `/api/docs` |
+| `GOOGLE_CLIENT_ID` | – | Google sign-in OAuth client ID. With the secret set, "Continue with Google" appears on the sign-in pages |
+| `GOOGLE_CLIENT_SECRET` | – | Google sign-in OAuth client secret |
+
+#### Google sign-in
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), configure the OAuth consent screen (External, scopes `openid`, `email`, `profile`), then create an **OAuth client ID** of type **Web application**.
+2. Add an **Authorized redirect URI** for every place the app runs: `WEB_URL` + `/api/v1/auth/google/callback`, e.g. `http://localhost:3000/api/v1/auth/google/callback` and `https://your-domain/api/v1/auth/google/callback`.
+3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (locally in `apps/api/.env`, on Vercel as project environment variables) and restart or redeploy.
+
+While the consent screen is in **Testing**, only the test users you list can sign in; publish it to open sign-in to everyone. A Google sign-in links to an existing account with the same verified email; accounts created through Google have no password until the user sets one in Settings.
 
 `apps/api/.env.test` (same keys) points `DATABASE_URL` at `expense_tracker_test`; the integration tests refuse to run against any database without `test` in its URL.
 

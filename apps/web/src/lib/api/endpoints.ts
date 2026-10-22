@@ -1,4 +1,5 @@
 import type {
+  AuthProviders,
   AuthResponse,
   Budget,
   BudgetPeriod,
@@ -25,7 +26,7 @@ import type {
   TransactionType,
   User,
 } from '@expense/shared';
-import { api, apiRaw, CSRF_HEADER, type QueryValue } from './client';
+import { api, apiRaw, API_BASE, CSRF_HEADER, type QueryValue } from './client';
 
 /** A range selection: a preset, or a custom from/to. */
 export interface RangeParams {
@@ -65,7 +66,14 @@ export const authApi = {
       auth: false,
     }),
   me: () => api<User>('/auth/me'),
+  providers: () => api<AuthProviders>('/auth/providers', { auth: false }),
 };
+
+/** Where the browser goes to start Google sign-in; the API takes it to Google and back. */
+export function googleSignInUrl(next: string, timezone?: string): string {
+  const params = new URLSearchParams({ next, ...(timezone ? { tz: timezone } : {}) });
+  return `${API_BASE}/auth/google?${params}`;
+}
 
 export type ProfileUpdate = Partial<
   Pick<
@@ -76,9 +84,9 @@ export type ProfileUpdate = Partial<
 
 export const usersApi = {
   update: (body: ProfileUpdate) => api<User>('/users/me', { method: 'PATCH', body }),
-  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+  changePassword: (body: { currentPassword?: string; newPassword: string }) =>
     api<AuthResponse>('/users/me/password', { method: 'PATCH', body }),
-  deleteAccount: (body: { password: string; confirmation: string }) =>
+  deleteAccount: (body: { password?: string; confirmation: string }) =>
     api<void>('/users/me', { method: 'DELETE', body }),
 };
 
