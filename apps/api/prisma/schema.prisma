@@ -43,6 +43,15 @@ enum LoanDirection {
   LENT
 }
 
+/// Where the money for a repayment of borrowed money came from.
+enum RepaymentSource {
+  SALARY
+  SAVINGS
+  SALARY_AND_SAVINGS
+  LOAN
+  OTHER
+}
+
 enum SavingsEntryType {
   DEPOSIT
   WITHDRAWAL
@@ -155,6 +164,7 @@ model Transaction {
   category             Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
   recurringExecution   RecurringExecution?
+  loanRepayment        LoanRepayment?
 
   @@index([userId, date])
   @@index([userId, type, date])
@@ -249,8 +259,10 @@ model Loan {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  repayments LoanRepayment[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repayments      LoanRepayment[] @relation("LoanRepayments")
+  /// The repayment of another loan that this loan was taken to fund, if any.
+  fundedRepayment LoanRepayment?  @relation("RepaymentFundingLoan")
 
   @@index([userId, direction])
   @@map("loans")
@@ -264,7 +276,21 @@ model LoanRepayment {
   notes     String?  @db.VarChar(500)
   createdAt DateTime @default(now())
 
-  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  /// How a repayment of borrowed money was paid for; null for collections and older entries.
+  source         RepaymentSource?
+  /// Explanation when the source is OTHER.
+  sourceNote     String?          @db.VarChar(300)
+  /// Expense recorded for the part paid from salary or income.
+  transactionId  String?          @unique
+  /// Savings withdrawal recorded for the part paid from savings.
+  savingsEntryId String?          @unique
+  /// New loan taken to make this repayment.
+  fundingLoanId  String?          @unique
+
+  loan         Loan          @relation("LoanRepayments", fields: [loanId], references: [id], onDelete: Cascade)
+  transaction  Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  savingsEntry SavingsEntry? @relation(fields: [savingsEntryId], references: [id], onDelete: SetNull)
+  fundingLoan  Loan?         @relation("RepaymentFundingLoan", fields: [fundingLoanId], references: [id], onDelete: SetNull)
 
   @@index([loanId, paidOn])
   @@map("loan_repayments")
@@ -286,7 +312,8 @@ model SavingsEntry {
   notes     String?          @db.VarChar(500)
   createdAt DateTime         @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loanRepayment LoanRepayment?
 
   @@index([userId, date])
   @@map("savings_entries")

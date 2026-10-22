@@ -531,11 +531,7 @@ export const bangla: Record<string, string> = {
   'Total borrowed': 'মোট ধার',
   'Total repaid': 'মোট পরিশোধ',
   'Delete this loan?': 'এই ঋণটি মুছে ফেলবেন?',
-  'The loan from “{name}” and all its repayments will be removed permanently.':
-    '“{name}” এর কাছ থেকে নেওয়া ঋণ এবং এর সব পরিশোধ স্থায়ীভাবে মুছে ফেলা হবে।',
   'Remove this repayment?': 'এই পরিশোধটি মুছে ফেলবেন?',
-  '{v0} will be added back to what you owe {name}.':
-    '{name} এর কাছে আপনার বাকির সাথে {v0} আবার যোগ হবে।',
   Remove: 'মুছুন',
   'Enter who you borrowed from': 'কার কাছ থেকে ধার নিয়েছেন লিখুন',
   'Keep notes under 1000 characters': 'নোট ১০০০ অক্ষরের মধ্যে রাখুন',
@@ -692,4 +688,38 @@ export const bangla: Record<string, string> = {
   'Edit repayment of {v0}': '{v0} এর পরিশোধ সম্পাদনা করুন',
   'Edit collection of {v0}': '{v0} এর আদায় সম্পাদনা করুন',
   'Up to {v0} can be recorded for this entry.': 'এই এন্ট্রিতে সর্বোচ্চ {v0} লেখা যাবে।',
+  'Paid from': 'কোথা থেকে পরিশোধ',
+  'Salary / income': 'বেতন / আয়',
+  'Salary + savings': 'বেতন + সঞ্চয়',
+  'Another loan': 'অন্য একটি ঋণ',
+  "Added to this month's expenses": 'এই মাসের খরচে যোগ হবে',
+  'Taken out of your savings': 'আপনার সঞ্চয় থেকে তোলা হবে',
+  'Split between both': 'দুটোর মধ্যে ভাগ করে',
+  'Added to your borrowed loans': 'আপনার ধার নেওয়া ঋণে যোগ হবে',
+  'Explain how you paid': 'কীভাবে পরিশোধ করেছেন লিখুন',
+  'From salary / income': 'বেতন / আয় থেকে',
+  'From savings': 'সঞ্চয় থেকে',
+  'Salary {v0} + savings {v1}': 'বেতন {v0} + সঞ্চয় {v1}',
+  'From salary and savings': 'বেতন ও সঞ্চয় থেকে',
+  'Borrowed from {name}': '{name} এর কাছ থেকে ধার',
+  'From another loan': 'অন্য ঋণ থেকে',
+  'Keep this under 300 characters': 'এটি ৩০০ অক্ষরের মধ্যে রাখুন',
+  'Choose where the money came from': 'টাকা কোথা থেকে এসেছে বেছে নিন',
+  'The two parts must add up to {v0}': 'দুটি অংশের যোগফল {v0} হতে হবে',
+  'Your savings only have {v0}': 'আপনার সঞ্চয়ে আছে মাত্র {v0}',
+  'Savings can only pay for a repayment dated today or earlier':
+    'সঞ্চয় থেকে শুধু আজ বা আগের তারিখের পরিশোধ করা যায়',
+  'Enter who you borrowed the money from': 'কার কাছ থেকে টাকা ধার নিয়েছেন লিখুন',
+  'Available in savings: {v0}': 'সঞ্চয়ে আছে: {v0}',
+  'Use the rest': 'বাকিটা দিন',
+  'How did you pay?': 'কীভাবে পরিশোধ করেছেন?',
+  'e.g. Sold my old phone': 'যেমন: পুরনো ফোন বিক্রি করেছি',
+  'Enter how much came from salary and how much from savings':
+    'বেতন থেকে কত এবং সঞ্চয় থেকে কত এসেছে লিখুন',
+  'Only repayments of borrowed money record where the money came from':
+    'শুধু ধার নেওয়া টাকার পরিশোধে টাকার উৎস লেখা হয়',
+  'The loan from “{name}” and all its repayments will be removed permanently, along with the expenses and savings withdrawals those repayments recorded.':
+    '“{name}” এর কাছ থেকে নেওয়া ঋণ, এর সব পরিশোধ এবং সেই পরিশোধগুলোর জন্য লেখা খরচ ও সঞ্চয় উত্তোলন স্থায়ীভাবে মুছে ফেলা হবে।',
+  '{v0} will be added back to what you owe {name}. Any expense, savings withdrawal or new loan it recorded is removed too.':
+    '{name} এর কাছে আপনার বাকির সাথে {v0} আবার যোগ হবে। এর জন্য লেখা খরচ, সঞ্চয় উত্তোলন বা নতুন ঋণও মুছে যাবে।',
 };

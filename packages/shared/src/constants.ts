@@ -187,3 +187,16 @@ export type SavingsEntryType = (typeof SAVINGS_ENTRY_TYPES)[number];
 /** BORROWED: you owe the counterparty. LENT: the counterparty owes you. */
 export const LOAN_DIRECTIONS = ['BORROWED', 'LENT'] as const;
 export type LoanDirection = (typeof LOAN_DIRECTIONS)[number];
+
+/**
+ * Where the money for a repayment of borrowed money came from. SALARY records an expense,
+ * SAVINGS a savings withdrawal, LOAN a new borrowed loan; OTHER only keeps an explanation.
+ */
+export const REPAYMENT_SOURCES = [
+  'SALARY',
+  'SAVINGS',
+  'SALARY_AND_SAVINGS',
+  'LOAN',
+  'OTHER',
+] as const;
+export type RepaymentSource = (typeof REPAYMENT_SOURCES)[number];

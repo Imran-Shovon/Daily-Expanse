@@ -15,6 +15,7 @@ import type {
   RecurrenceFrequency,
   RecurringExecution,
   RecurringTransaction,
+  RepaymentSource,
   ReportGranularity,
   SavingsEntry,
   SavingsEntryType,
@@ -249,6 +250,15 @@ export interface RepaymentInput {
   amount: string;
   paidOn: string;
   notes: string | null;
+  /** Where the money came from; only when repaying borrowed money. */
+  source?: RepaymentSource;
+  /** Split for SALARY_AND_SAVINGS. */
+  fromSalary?: string;
+  fromSavings?: string;
+  /** Who lent the money, for LOAN. */
+  fundingLender?: string;
+  /** Explanation for OTHER. */
+  sourceNote?: string;
 }
 
 export const loansApi = {

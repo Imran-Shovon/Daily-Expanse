@@ -78,9 +78,11 @@ export const LOAN_COPY: Record<
     emptyDescription:
       'When you borrow money, add it here. Record each repayment and see what you still owe.',
     emptyAction: 'Add borrowed money',
-    deleteDescription: 'The loan from “{name}” and all its repayments will be removed permanently.',
+    deleteDescription:
+      'The loan from “{name}” and all its repayments will be removed permanently, along with the expenses and savings withdrawals those repayments recorded.',
     undoTitle: 'Remove this repayment?',
-    undoDescription: '{v0} will be added back to what you owe {name}.',
+    undoDescription:
+      '{v0} will be added back to what you owe {name}. Any expense, savings withdrawal or new loan it recorded is removed too.',
     repayTitle: 'Repay {name}',
     repayDescription: 'You still owe {v0}.',
     repayDateLabel: 'Paid on',

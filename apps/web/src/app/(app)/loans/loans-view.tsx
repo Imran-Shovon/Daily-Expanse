@@ -21,6 +21,7 @@ import { useFormatters } from '@/components/common/money';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState, ErrorState } from '@/components/common/states';
 import { LOAN_COPY } from '@/components/loans/loan-copy';
+import { fundingSummary } from '@/components/loans/repayment-source';
 import { LoanDialog } from '@/components/loans/loan-dialog';
 import { RepayDialog } from '@/components/loans/repay-dialog';
 import { Button } from '@/components/ui/button';
@@ -211,6 +212,11 @@ function LoanCard({
                       {fmtDate(r.paidOn)}
                       {r.notes && ` · ${r.notes}`}
                     </p>
+                    {r.funding && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {fundingSummary(r.funding, tr, money)}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"

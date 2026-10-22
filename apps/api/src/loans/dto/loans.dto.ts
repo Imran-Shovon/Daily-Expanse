@@ -1,4 +1,9 @@
-import { LOAN_DIRECTIONS, type LoanDirection } from '@expense/shared';
+import {
+  LOAN_DIRECTIONS,
+  REPAYMENT_SOURCES,
+  type LoanDirection,
+  type RepaymentSource,
+} from '@expense/shared';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { IsMoney, IsPlainDate, MoneyTransform, Trim } from '../../common/validation/validators';
@@ -76,7 +81,44 @@ export class UpdateLoanDto {
   notes?: string | null;
 }
 
-export class CreateRepaymentDto {
+/** Where the money for a repayment of borrowed money came from. */
+class RepaymentFundingFields {
+  @ApiPropertyOptional({
+    enum: REPAYMENT_SOURCES,
+    description: 'Required when repaying borrowed money; not used when collecting',
+  })
+  @IsOptional()
+  @IsIn(REPAYMENT_SOURCES)
+  source?: RepaymentSource;
+
+  @ApiPropertyOptional({ example: '3000.00', description: 'SALARY_AND_SAVINGS: part from salary' })
+  @IsOptional()
+  @MoneyTransform()
+  @IsMoney()
+  fromSalary?: string;
+
+  @ApiPropertyOptional({ example: '2000.00', description: 'SALARY_AND_SAVINGS: part from savings' })
+  @IsOptional()
+  @MoneyTransform()
+  @IsMoney()
+  fromSavings?: string;
+
+  @ApiPropertyOptional({ example: 'Karim', description: 'LOAN: who lent you the money' })
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(80)
+  fundingLender?: string;
+
+  @ApiPropertyOptional({ description: 'OTHER: how the repayment was paid' })
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(300)
+  sourceNote?: string;
+}
+
+export class CreateRepaymentDto extends RepaymentFundingFields {
   @ApiProperty({ example: '1000.00', description: 'Cannot exceed the outstanding amount' })
   @MoneyTransform()
   @IsMoney()
@@ -95,7 +137,7 @@ export class CreateRepaymentDto {
   notes?: string | null;
 }
 
-export class UpdateRepaymentDto {
+export class UpdateRepaymentDto extends RepaymentFundingFields {
   @ApiPropertyOptional({ example: '1500.00', description: 'Total repaid cannot exceed the loan' })
   @IsOptional()
   @MoneyTransform()

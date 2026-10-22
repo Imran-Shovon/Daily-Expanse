@@ -3,6 +3,7 @@ import type {
   DateFormat,
   DateRangePreset,
   LoanDirection,
+  RepaymentSource,
   PaymentMethod,
   RecurrenceFrequency,
   ReportGranularity,
@@ -233,11 +234,28 @@ export interface IncomeExpenseReport {
 /** `paid` once repayments cover the amount; `overdue` when unpaid past the due date. */
 export type LoanStatus = 'active' | 'overdue' | 'paid';
 
+/** How a repayment of borrowed money was paid for, and the records it created. */
+export interface RepaymentFunding {
+  source: RepaymentSource;
+  /** Paid from salary or income; recorded as an expense. Null when not used or since deleted. */
+  fromSalary: Money | null;
+  transactionId: string | null;
+  /** Paid from savings; recorded as a savings withdrawal. */
+  fromSavings: Money | null;
+  savingsEntryId: string | null;
+  /** New loan taken to make the repayment. */
+  loan: { id: string; counterparty: string } | null;
+  /** Explanation for OTHER. */
+  note: string | null;
+}
+
 export interface LoanRepayment {
   id: string;
   amount: Money;
   paidOn: IsoDate;
   notes: string | null;
+  /** Null for collections on money you lent, and for repayments recorded before sources. */
+  funding: RepaymentFunding | null;
   createdAt: string;
 }
 

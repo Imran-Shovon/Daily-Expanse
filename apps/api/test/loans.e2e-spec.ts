@@ -25,7 +25,14 @@ describe('Loans (e2e)', () => {
 
   const borrow = (body: Record<string, unknown>) =>
     http.post(`${API}/loans`).set(user.auth).send(body);
+  // Repaying borrowed money needs a source; OTHER records nothing elsewhere.
   const repay = (id: string, body: Record<string, unknown>, as: TestUser = user) =>
+    http
+      .post(`${API}/loans/${id}/repayments`)
+      .set(as.auth)
+      .send({ source: 'OTHER', sourceNote: 'Cash in hand', ...body });
+  // Collecting money you lent takes no source.
+  const collect = (id: string, body: Record<string, unknown>, as: TestUser = user) =>
     http.post(`${API}/loans/${id}/repayments`).set(as.auth).send(body);
 
   it('tracks repayments down to a paid-off loan', async () => {
@@ -130,8 +137,8 @@ describe('Loans (e2e)', () => {
     });
 
     // Collecting money back works exactly like a repayment, capped at what is still owed.
-    await repay(lent.id, { amount: '1000', paidOn: '2026-03-01' }, lender).expect(201);
-    await repay(lent.id, { amount: '2000.01' }, lender).expect(400);
+    await collect(lent.id, { amount: '1000', paidOn: '2026-03-01' }, lender).expect(201);
+    await collect(lent.id, { amount: '2000.01' }, lender).expect(400);
 
     await http
       .post(`${API}/loans`)
