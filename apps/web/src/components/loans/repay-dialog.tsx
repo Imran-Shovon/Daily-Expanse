@@ -22,6 +22,7 @@ import { ApiError } from '@/lib/api/client';
 import { useRepayLoan } from '@/lib/api/hooks';
 import { useUser } from '@/lib/auth/auth-provider';
 import { isValidAmount, todayIn } from '@/lib/format';
+import { LOAN_COPY } from './loan-copy';
 
 /** Compares 2-decimal money strings exactly by converting to integer cents. */
 const cents = (amount: string) => Math.round(Number(amount) * 100);
@@ -34,12 +35,12 @@ function schemaFor(loan: Loan) {
       .refine(isValidAmount, 'Enter a positive amount with up to 2 decimal places')
       .refine(
         (v) => !isValidAmount(v) || cents(v) <= cents(loan.outstanding),
-        'That is more than you still owe',
+        LOAN_COPY[loan.direction].repayTooMuch,
       ),
     paidOn: z
       .string()
       .min(1, 'Choose a date')
-      .refine((v) => v >= loan.borrowedOn, 'A repayment cannot be dated before the loan was taken'),
+      .refine((v) => v >= loan.loanDate, 'A repayment cannot be dated before the loan date'),
     notes: z.string().trim().max(500, 'Keep notes under 500 characters'),
   });
 }
@@ -59,9 +60,15 @@ export function RepayDialog({
     <Dialog open={loan !== null} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{tr('Repay {name}', { name: loan?.lender ?? '' })}</DialogTitle>
+          <DialogTitle>
+            {loan && tr(LOAN_COPY[loan.direction].repayTitle, { name: loan.counterparty })}
+          </DialogTitle>
           <DialogDescription>
-            {loan && tr('You still owe {v0}.', { v0: money(loan.outstanding) })}
+            {loan &&
+              tr(LOAN_COPY[loan.direction].repayDescription, {
+                v0: money(loan.outstanding),
+                name: loan.counterparty,
+              })}
           </DialogDescription>
         </DialogHeader>
         {loan && <RepayForm key={loan.id} loan={loan} onDone={() => onOpenChange(false)} />}
@@ -74,6 +81,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
   const { t: tr } = useLanguage();
   const user = useUser();
   const repay = useRepayLoan();
+  const copy = LOAN_COPY[loan.direction];
   const { register, handleSubmit, formState, setError, setValue } = useForm<Values>({
     resolver: zodResolver(schemaFor(loan)),
     defaultValues: { amount: '', paidOn: todayIn(user.timezone), notes: '' },
@@ -110,7 +118,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
                 setValue('amount', loan.outstanding, { shouldValidate: true, shouldDirty: true })
               }
             >
-              {tr('Pay in full')}
+              {tr(copy.repayInFull)}
             </button>
           </div>
           <Input
@@ -125,11 +133,11 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
           <FieldError message={formState.errors.amount?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="r-date">{tr('Paid on')}</Label>
+          <Label htmlFor="r-date">{tr(copy.repayDateLabel)}</Label>
           <Input
             id="r-date"
             type="date"
-            min={loan.borrowedOn}
+            min={loan.loanDate}
             aria-invalid={!!formState.errors.paidOn}
             {...register('paidOn')}
           />
@@ -142,7 +150,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
           {tr('Notes')}{' '}
           <span className="font-normal text-muted-foreground">{tr('(optional)')}</span>
         </Label>
-        <Input id="r-notes" placeholder={tr('e.g. Paid by bKash')} {...register('notes')} />
+        <Input id="r-notes" placeholder={tr(copy.repayNotesPlaceholder)} {...register('notes')} />
         <FieldError message={formState.errors.notes?.message} />
       </div>
 
@@ -152,7 +160,7 @@ function RepayForm({ loan, onDone }: { loan: Loan; onDone: () => void }) {
         </Button>
         <Button type="submit" disabled={formState.isSubmitting}>
           {formState.isSubmitting && <Loader2 className="animate-spin" />}
-          {tr('Record repayment')}
+          {tr(copy.repaySubmit)}
         </Button>
       </div>
     </form>

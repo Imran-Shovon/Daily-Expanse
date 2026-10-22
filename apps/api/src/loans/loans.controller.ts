@@ -22,13 +22,13 @@ export class LoansController {
   constructor(private readonly loans: LoansService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List borrowed loans with repayments and outstanding totals' })
+  @ApiOperation({ summary: 'List borrowed and lent loans with repayments and totals per side' })
   overview(@CurrentUserId() userId: string): Promise<LoansOverview> {
     return this.loans.overview(userId);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Record money you borrowed' })
+  @ApiOperation({ summary: 'Record money you borrowed or lent' })
   create(@CurrentUserId() userId: string, @Body() dto: CreateLoanDto): Promise<Loan> {
     return this.loans.create(userId, dto);
   }
@@ -51,7 +51,7 @@ export class LoansController {
   }
 
   @Post(':id/repayments')
-  @ApiOperation({ summary: 'Record a repayment (cannot exceed the outstanding amount)' })
+  @ApiOperation({ summary: 'Record a repayment made or collected (up to the outstanding amount)' })
   repay(
     @CurrentUserId() userId: string,
     @Param('id') id: string,

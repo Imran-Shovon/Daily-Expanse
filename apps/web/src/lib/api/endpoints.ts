@@ -8,6 +8,7 @@ import type {
   DateRangePreset,
   IncomeExpenseReport,
   Loan,
+  LoanDirection,
   LoansOverview,
   Paginated,
   PaymentMethod,
@@ -235,9 +236,11 @@ export const recurringApi = {
 /* Loans ------------------------------------------------------------------ */
 
 export interface LoanInput {
-  lender: string;
+  /** Only when creating; a loan's side is fixed once recorded. */
+  direction?: LoanDirection;
+  counterparty: string;
   amount: string;
-  borrowedOn: string;
+  loanDate: string;
   dueDate: string | null;
   notes: string | null;
 }

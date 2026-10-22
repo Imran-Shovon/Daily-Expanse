@@ -38,6 +38,11 @@ enum RecurrenceFrequency {
   YEARLY
 }
 
+enum LoanDirection {
+  BORROWED
+  LENT
+}
+
 enum SavingsEntryType {
   DEPOSIT
   WITHDRAWAL
@@ -227,23 +232,27 @@ model RecurringExecution {
   @@map("recurring_executions")
 }
 
-/// Money the user borrowed. Loans are tracked apart from transactions: borrowing is not
-/// income and repaying is not an expense, so neither changes income/expense totals.
+/// Money the user borrowed (BORROWED) or lent to someone else (LENT). Loans are tracked apart
+/// from transactions: borrowing or collecting is not income and repaying or lending is not an
+/// expense, so neither changes income/expense totals.
 model Loan {
-  id         String    @id @default(cuid())
-  userId     String
-  lender     String    @db.VarChar(80)
-  amount     Decimal   @db.Decimal(14, 2)
-  borrowedOn DateTime  @db.Date
-  dueDate    DateTime? @db.Date
-  notes      String?   @db.VarChar(1000)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String        @id @default(cuid())
+  userId       String
+  direction    LoanDirection @default(BORROWED)
+  /// Who you borrowed from, or who you lent to. Column kept as "lender" from before lending existed.
+  counterparty String        @map("lender") @db.VarChar(80)
+  amount       Decimal       @db.Decimal(14, 2)
+  /// Day the money changed hands.
+  loanDate     DateTime      @map("borrowedOn") @db.Date
+  dueDate      DateTime?     @db.Date
+  notes        String?       @db.VarChar(1000)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   repayments LoanRepayment[]
 
-  @@index([userId])
+  @@index([userId, direction])
   @@map("loans")
 }
 

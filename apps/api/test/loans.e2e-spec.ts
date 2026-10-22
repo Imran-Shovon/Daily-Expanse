@@ -30,7 +30,7 @@ describe('Loans (e2e)', () => {
 
   it('tracks repayments down to a paid-off loan', async () => {
     const created = (
-      await borrow({ lender: 'Rahim', amount: '1000.00', borrowedOn: '2026-01-10' }).expect(201)
+      await borrow({ counterparty: 'Rahim', amount: '1000.00', loanDate: '2026-01-10' }).expect(201)
     ).body as Loan;
     expect(created).toMatchObject({ outstanding: '1000.00', repaid: '0.00', status: 'active' });
 
@@ -61,35 +61,42 @@ describe('Loans (e2e)', () => {
 
   it('flags overdue loans and summarises totals', async () => {
     await borrow({
-      lender: 'Bank',
+      counterparty: 'Bank',
       amount: '500',
-      borrowedOn: '2025-01-01',
+      loanDate: '2025-01-01',
       dueDate: '2025-06-30',
     }).expect(201);
     const overview = (await http.get(`${API}/loans`).set(user.auth).expect(200))
       .body as LoansOverview;
-    expect(overview.loans[0]).toMatchObject({ lender: 'Bank', status: 'overdue' });
-    expect(overview.totals).toEqual({
-      borrowed: '1500.00',
+    expect(overview.loans[0]).toMatchObject({ counterparty: 'Bank', status: 'overdue' });
+    expect(overview.totals.BORROWED).toEqual({
+      amount: '1500.00',
       repaid: '400.50',
       outstanding: '1099.50',
       activeCount: 2,
       overdueCount: 1,
     });
+    expect(overview.totals.LENT).toEqual({
+      amount: '0.00',
+      repaid: '0.00',
+      outstanding: '0.00',
+      activeCount: 0,
+      overdueCount: 0,
+    });
   });
 
   it('validates dates and amounts', async () => {
     await borrow({
-      lender: 'X',
+      counterparty: 'X',
       amount: '10',
-      borrowedOn: '2026-05-01',
+      loanDate: '2026-05-01',
       dueDate: '2026-04-01',
     }).expect(400);
-    await borrow({ lender: '', amount: '10' }).expect(400);
-    await borrow({ lender: 'X', amount: '-5' }).expect(400);
+    await borrow({ counterparty: '', amount: '10' }).expect(400);
+    await borrow({ counterparty: 'X', amount: '-5' }).expect(400);
 
     const loan = (
-      await borrow({ lender: 'Y', amount: '100', borrowedOn: '2026-05-01' }).expect(201)
+      await borrow({ counterparty: 'Y', amount: '100', loanDate: '2026-05-01' }).expect(201)
     ).body as Loan;
     await repay(loan.id, { amount: '10', paidOn: '2026-04-30' }).expect(400);
     await repay(loan.id, { amount: '60', paidOn: '2026-05-02' }).expect(201);
@@ -97,7 +104,7 @@ describe('Loans (e2e)', () => {
     await http
       .patch(`${API}/loans/${loan.id}`)
       .set(user.auth)
-      .send({ borrowedOn: '2026-05-03' })
+      .send({ loanDate: '2026-05-03' })
       .expect(400);
     const updated = (
       await http.patch(`${API}/loans/${loan.id}`).set(user.auth).send({ amount: '60' }).expect(200)
@@ -105,19 +112,71 @@ describe('Loans (e2e)', () => {
     expect(updated.status).toBe('paid');
   });
 
+  it('tracks money lent separately from money borrowed', async () => {
+    const lender = await registerUser(app);
+    const lend = (body: Record<string, unknown>) =>
+      http
+        .post(`${API}/loans`)
+        .set(lender.auth)
+        .send({ direction: 'LENT', ...body });
+
+    const lent = (
+      await lend({ counterparty: 'Karim', amount: '3000', loanDate: '2026-02-01' }).expect(201)
+    ).body as Loan;
+    expect(lent).toMatchObject({
+      direction: 'LENT',
+      counterparty: 'Karim',
+      outstanding: '3000.00',
+    });
+
+    // Collecting money back works exactly like a repayment, capped at what is still owed.
+    await repay(lent.id, { amount: '1000', paidOn: '2026-03-01' }, lender).expect(201);
+    await repay(lent.id, { amount: '2000.01' }, lender).expect(400);
+
+    await http
+      .post(`${API}/loans`)
+      .set(lender.auth)
+      .send({ counterparty: 'Bank', amount: '500' })
+      .expect(201)
+      .expect((res) => expect(res.body.direction).toBe('BORROWED'));
+    await lend({ counterparty: 'X', amount: '10', direction: 'GIFT' }).expect(400);
+
+    const { totals, loans } = (await http.get(`${API}/loans`).set(lender.auth).expect(200))
+      .body as LoansOverview;
+    expect(totals.LENT).toMatchObject({
+      amount: '3000.00',
+      repaid: '1000.00',
+      outstanding: '2000.00',
+    });
+    expect(totals.BORROWED).toMatchObject({ amount: '500.00', outstanding: '500.00' });
+    expect(loans).toHaveLength(2);
+
+    // The direction is fixed once recorded.
+    await http
+      .patch(`${API}/loans/${lent.id}`)
+      .set(lender.auth)
+      .send({ direction: 'BORROWED' })
+      .expect(400);
+  });
+
   it("never exposes or changes another user's loans", async () => {
-    const loan = (await borrow({ lender: 'Private', amount: '100' }).expect(201)).body as Loan;
+    const loan = (await borrow({ counterparty: 'Private', amount: '100' }).expect(201))
+      .body as Loan;
     const theirs = (await http.get(`${API}/loans`).set(other.auth).expect(200))
       .body as LoansOverview;
     expect(theirs.loans).toEqual([]);
     await repay(loan.id, { amount: '10' }, other).expect(404);
-    await http.patch(`${API}/loans/${loan.id}`).set(other.auth).send({ lender: 'Z' }).expect(404);
+    await http
+      .patch(`${API}/loans/${loan.id}`)
+      .set(other.auth)
+      .send({ counterparty: 'Z' })
+      .expect(404);
     await http.delete(`${API}/loans/${loan.id}`).set(other.auth).expect(404);
     await http.delete(`${API}/loans/${loan.id}`).set(user.auth).expect(204);
   });
 
   it('serialises concurrent repayments so a loan is never overpaid', async () => {
-    const loan = (await borrow({ lender: 'Race', amount: '100' }).expect(201)).body as Loan;
+    const loan = (await borrow({ counterparty: 'Race', amount: '100' }).expect(201)).body as Loan;
     const results = await Promise.all(
       Array.from({ length: 5 }, () => repay(loan.id, { amount: '40' })),
     );

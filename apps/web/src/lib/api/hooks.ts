@@ -326,7 +326,14 @@ export function useRepayLoan() {
   return useFinancialMutation(
     ({ id, input }: { id: string; input: RepaymentInput }) => loansApi.repay(id, input),
     {
-      success: (loan) => (loan.status === 'paid' ? 'Loan fully repaid' : 'Repayment recorded'),
+      success: (loan) =>
+        loan.direction === 'LENT'
+          ? loan.status === 'paid'
+            ? 'Loan fully collected'
+            : 'Collection recorded'
+          : loan.status === 'paid'
+            ? 'Loan fully repaid'
+            : 'Repayment recorded',
       error: 'Could not record repayment',
     },
   );
@@ -336,7 +343,7 @@ export function useDeleteRepayment() {
   return useFinancialMutation(
     ({ id, repaymentId }: { id: string; repaymentId: string }) =>
       loansApi.removeRepayment(id, repaymentId),
-    { success: 'Repayment removed', error: 'Could not remove repayment' },
+    { success: 'Entry removed', error: 'Could not remove entry' },
   );
 }
 

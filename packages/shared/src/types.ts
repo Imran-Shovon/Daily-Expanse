@@ -2,6 +2,7 @@ import type {
   BudgetPeriod,
   DateFormat,
   DateRangePreset,
+  LoanDirection,
   PaymentMethod,
   RecurrenceFrequency,
   ReportGranularity,
@@ -242,11 +243,15 @@ export interface LoanRepayment {
 
 export interface Loan {
   id: string;
-  lender: string;
+  direction: LoanDirection;
+  /** Who you borrowed from, or who you lent to. */
+  counterparty: string;
   amount: Money;
-  borrowedOn: IsoDate;
+  /** Day the money changed hands. */
+  loanDate: IsoDate;
   dueDate: IsoDate | null;
   notes: string | null;
+  /** Repaid to the lender (borrowed) or collected from the borrower (lent). */
   repaid: Money;
   outstanding: Money;
   /** Percentage of the amount repaid, rounded to 1 decimal place. */
@@ -258,14 +263,17 @@ export interface Loan {
   updatedAt: string;
 }
 
+export interface LoanTotals {
+  amount: Money;
+  repaid: Money;
+  outstanding: Money;
+  activeCount: number;
+  overdueCount: number;
+}
+
 export interface LoansOverview {
-  totals: {
-    borrowed: Money;
-    repaid: Money;
-    outstanding: Money;
-    activeCount: number;
-    overdueCount: number;
-  };
+  /** BORROWED totals are what you owe; LENT totals are what others owe you. */
+  totals: Record<LoanDirection, LoanTotals>;
   loans: Loan[];
 }
 

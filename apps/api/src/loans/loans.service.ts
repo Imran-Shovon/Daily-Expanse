@@ -1,4 +1,10 @@
-import type { Loan as LoanDto, LoansOverview, LoanStatus } from '@expense/shared';
+import type {
+  Loan as LoanDto,
+  LoanDirection,
+  LoansOverview,
+  LoanStatus,
+  LoanTotals,
+} from '@expense/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Loan, LoanRepayment, Prisma } from '@prisma/client';
 import { sumMoney, toMoney } from '../common/finance/money';
@@ -33,33 +39,28 @@ export class LoansService {
       (a, b) =>
         STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
         (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31') ||
-        b.borrowedOn.localeCompare(a.borrowedOn),
+        b.loanDate.localeCompare(a.loanDate),
     );
 
     return {
-      totals: {
-        borrowed: toMoney(sumMoney(loans.map((l) => l.amount))),
-        repaid: toMoney(sumMoney(loans.map((l) => l.repaid))),
-        outstanding: toMoney(sumMoney(loans.map((l) => l.outstanding))),
-        activeCount: loans.filter((l) => l.status !== 'paid').length,
-        overdueCount: loans.filter((l) => l.status === 'overdue').length,
-      },
+      totals: { BORROWED: totalsFor(loans, 'BORROWED'), LENT: totalsFor(loans, 'LENT') },
       loans,
     };
   }
 
   async create(userId: string, dto: CreateLoanDto): Promise<LoanDto> {
     const { today } = await this.users.today(userId);
-    const borrowedOn = dto.borrowedOn ?? today;
+    const loanDate = dto.loanDate ?? today;
     const dueDate = dto.dueDate ?? null;
-    assertDueAfterBorrowed(borrowedOn, dueDate);
+    assertDueAfterLoanDate(loanDate, dueDate);
 
     const loan = await this.prisma.loan.create({
       data: {
         userId,
-        lender: dto.lender,
+        direction: dto.direction ?? 'BORROWED',
+        counterparty: dto.counterparty,
         amount: new Prisma.Decimal(dto.amount),
-        borrowedOn: toDbDate(borrowedOn),
+        loanDate: toDbDate(loanDate),
         dueDate: dueDate ? toDbDate(dueDate) : null,
         notes: dto.notes || null,
       },
@@ -72,31 +73,31 @@ export class LoansService {
     const { today } = await this.users.today(userId);
     const loan = await this.prisma.$transaction(async (tx) => {
       const existing = await lockOwnedLoan(tx, userId, id);
-      const borrowedOn = dto.borrowedOn ?? fromDbDate(existing.borrowedOn);
+      const loanDate = dto.loanDate ?? fromDbDate(existing.loanDate);
       const dueDate =
         dto.dueDate === undefined ? existing.dueDate && fromDbDate(existing.dueDate) : dto.dueDate;
-      assertDueAfterBorrowed(borrowedOn, dueDate);
+      assertDueAfterLoanDate(loanDate, dueDate);
 
       if (
         dto.amount !== undefined &&
         new Prisma.Decimal(dto.amount).lt(sumMoney(existing.repayments.map((r) => r.amount)))
       ) {
         throw new BadRequestException(
-          'The amount cannot be less than what you have already repaid',
+          'The amount cannot be less than what has already been repaid',
         );
       }
       const earliest = existing.repayments.at(-1);
-      if (earliest && borrowedOn > fromDbDate(earliest.paidOn)) {
-        throw new BadRequestException('The borrowed date cannot be after the first repayment');
+      if (earliest && loanDate > fromDbDate(earliest.paidOn)) {
+        throw new BadRequestException('The loan date cannot be after the first repayment');
       }
 
       return tx.loan.update({
         where: { id },
         data: {
-          ...(dto.lender !== undefined ? { lender: dto.lender } : {}),
+          ...(dto.counterparty !== undefined ? { counterparty: dto.counterparty } : {}),
           ...(dto.amount !== undefined ? { amount: new Prisma.Decimal(dto.amount) } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
-          borrowedOn: toDbDate(borrowedOn),
+          loanDate: toDbDate(loanDate),
           dueDate: dueDate ? toDbDate(dueDate) : null,
         },
         include: withRepayments,
@@ -118,8 +119,8 @@ export class LoansService {
     const loan = await this.prisma.$transaction(async (tx) => {
       // The row lock serialises concurrent repayments so the loan can never be overpaid.
       const existing = await lockOwnedLoan(tx, userId, id);
-      if (paidOn < fromDbDate(existing.borrowedOn)) {
-        throw new BadRequestException('A repayment cannot be dated before the loan was taken');
+      if (paidOn < fromDbDate(existing.loanDate)) {
+        throw new BadRequestException('A repayment cannot be dated before the loan date');
       }
       const { outstanding } = loanBalance(
         existing.amount,
@@ -130,7 +131,7 @@ export class LoansService {
       if (outstanding.lte(0)) throw new BadRequestException('This loan is already fully repaid');
       if (amount.gt(outstanding)) {
         throw new BadRequestException(
-          `The repayment is more than the ${toMoney(outstanding)} still owed`,
+          `The repayment is more than the ${toMoney(outstanding)} outstanding`,
         );
       }
 
@@ -167,10 +168,21 @@ async function lockOwnedLoan(
   return tx.loan.findUniqueOrThrow({ where: { id }, include: withRepayments });
 }
 
-function assertDueAfterBorrowed(borrowedOn: PlainDate, dueDate: PlainDate | null) {
-  if (dueDate && dueDate < borrowedOn) {
-    throw new BadRequestException('The due date must be on or after the borrowed date');
+function assertDueAfterLoanDate(loanDate: PlainDate, dueDate: PlainDate | null) {
+  if (dueDate && dueDate < loanDate) {
+    throw new BadRequestException('The due date must be on or after the loan date');
   }
+}
+
+function totalsFor(loans: LoanDto[], direction: LoanDirection): LoanTotals {
+  const side = loans.filter((l) => l.direction === direction);
+  return {
+    amount: toMoney(sumMoney(side.map((l) => l.amount))),
+    repaid: toMoney(sumMoney(side.map((l) => l.repaid))),
+    outstanding: toMoney(sumMoney(side.map((l) => l.outstanding))),
+    activeCount: side.filter((l) => l.status !== 'paid').length,
+    overdueCount: side.filter((l) => l.status === 'overdue').length,
+  };
 }
 
 function toLoanDto(loan: LoanWithRepayments, today: PlainDate): LoanDto {
@@ -183,9 +195,10 @@ function toLoanDto(loan: LoanWithRepayments, today: PlainDate): LoanDto {
   );
   return {
     id: loan.id,
-    lender: loan.lender,
+    direction: loan.direction,
+    counterparty: loan.counterparty,
     amount: toMoney(loan.amount),
-    borrowedOn: fromDbDate(loan.borrowedOn),
+    loanDate: fromDbDate(loan.loanDate),
     dueDate,
     notes: loan.notes,
     repaid: toMoney(balance.repaid),

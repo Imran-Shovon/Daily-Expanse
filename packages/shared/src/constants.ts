@@ -183,3 +183,7 @@ export const BUDGET_EXCEEDED_THRESHOLD = 100;
 
 export const SAVINGS_ENTRY_TYPES = ['DEPOSIT', 'WITHDRAWAL'] as const;
 export type SavingsEntryType = (typeof SAVINGS_ENTRY_TYPES)[number];
+
+/** BORROWED: you owe the counterparty. LENT: the counterparty owes you. */
+export const LOAN_DIRECTIONS = ['BORROWED', 'LENT'] as const;
+export type LoanDirection = (typeof LOAN_DIRECTIONS)[number];

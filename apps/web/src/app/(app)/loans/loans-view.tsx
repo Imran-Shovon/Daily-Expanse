@@ -1,12 +1,13 @@
 'use client';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
-import type { Loan, LoanRepayment, LoanStatus } from '@expense/shared';
+import type { Loan, LoanDirection, LoanRepayment, LoanStatus } from '@expense/shared';
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
   HandCoins,
+  HandHeart,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import { useDateFormatter } from '@/components/common/formatted-date';
 import { useFormatters } from '@/components/common/money';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState, ErrorState } from '@/components/common/states';
+import { LOAN_COPY } from '@/components/loans/loan-copy';
 import { LoanDialog } from '@/components/loans/loan-dialog';
 import { RepayDialog } from '@/components/loans/repay-dialog';
 import { Button } from '@/components/ui/button';
@@ -35,14 +37,13 @@ import { useDeleteLoan, useDeleteRepayment, useLoans } from '@/lib/api/hooks';
 import { formatPercent } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-const STATUS_BADGE: Record<
-  LoanStatus,
-  { label: string; variant: 'default' | 'destructive' | 'secondary' }
-> = {
-  active: { label: 'Owed', variant: 'default' },
-  overdue: { label: 'Overdue', variant: 'destructive' },
-  paid: { label: 'Paid off', variant: 'secondary' },
+const STATUS_VARIANT: Record<LoanStatus, 'default' | 'destructive' | 'secondary'> = {
+  active: 'default',
+  overdue: 'destructive',
+  paid: 'secondary',
 };
+
+const DIRECTION_ICON = { BORROWED: HandCoins, LENT: HandHeart } as const;
 
 function SummaryTile({
   label,
@@ -88,7 +89,8 @@ function LoanCard({
   const { money } = useFormatters();
   const fmtDate = useDateFormatter();
   const [showHistory, setShowHistory] = React.useState(false);
-  const badge = STATUS_BADGE[loan.status];
+  const copy = LOAN_COPY[loan.direction];
+  const Icon = DIRECTION_ICON[loan.direction];
   const isPaid = loan.status === 'paid';
   const historyId = `loan-history-${loan.id}`;
 
@@ -102,18 +104,18 @@ function LoanCard({
               isPaid ? 'bg-muted text-muted-foreground' : 'bg-accent text-accent-foreground',
             )}
           >
-            {isPaid ? <CheckCircle2 className="size-5" /> : <HandCoins className="size-5" />}
+            {isPaid ? <CheckCircle2 className="size-5" /> : <Icon className="size-5" />}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="min-w-0 truncate font-medium">{loan.lender}</p>
-              <Badge variant={badge.variant} className="shrink-0">
+              <p className="min-w-0 truncate font-medium">{loan.counterparty}</p>
+              <Badge variant={STATUS_VARIANT[loan.status]} className="shrink-0">
                 {loan.status === 'overdue' && <AlertTriangle />}
-                {tr(badge.label)}
+                {tr(copy.status[loan.status])}
               </Badge>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {tr('Borrowed {v0}', { v0: fmtDate(loan.borrowedOn) })}
+              {tr(copy.cardDate, { v0: fmtDate(loan.loanDate) })}
               {loan.dueDate && (
                 <>
                   {' · '}
@@ -129,7 +131,7 @@ function LoanCard({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label={tr('Actions for {v0}', { v0: loan.lender })}
+                aria-label={tr('Actions for {v0}', { v0: loan.counterparty })}
               >
                 <MoreHorizontal />
               </Button>
@@ -149,7 +151,7 @@ function LoanCard({
         <div className="mt-5 flex items-end justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">
-              {isPaid ? tr('Repaid in full') : tr('Still owed')}
+              {isPaid ? tr(copy.settledInFull) : tr(copy.outstanding)}
             </p>
             <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular">
               {money(isPaid ? loan.amount : loan.outstanding)}
@@ -157,7 +159,7 @@ function LoanCard({
           </div>
           {!isPaid && (
             <Button size="sm" onClick={onRepay}>
-              <Undo2 /> {tr('Repay')}
+              <Undo2 /> {tr(copy.action)}
             </Button>
           )}
         </div>
@@ -166,11 +168,11 @@ function LoanCard({
           className="mt-4"
           value={loan.percentRepaid}
           indicatorClassName={cn(isPaid && 'bg-muted-foreground/50')}
-          aria-label={tr('Repaid')}
+          aria-label={tr(copy.progressLabel)}
         />
-        <div className="mt-2 flex justify-between text-xs text-muted-foreground tabular">
+        <div className="mt-2 flex justify-between gap-2 text-xs text-muted-foreground tabular">
           <span>
-            {tr('{v0} repaid', { v0: money(loan.repaid) })} ·{' '}
+            {tr(copy.progress, { v0: money(loan.repaid) })} ·{' '}
             {formatPercent(loan.percentRepaid, undefined, locale)}
           </span>
           <span>{tr('of {v0}', { v0: money(loan.amount) })}</span>
@@ -188,8 +190,8 @@ function LoanCard({
             onClick={() => setShowHistory((s) => !s)}
           >
             {loan.repayments.length === 1
-              ? tr('1 repayment')
-              : tr('{count} repayments', { count: loan.repayments.length })}
+              ? tr(copy.oneEntry)
+              : tr(copy.manyEntries, { count: loan.repayments.length })}
             <ChevronDown
               className={cn(
                 'size-4 text-muted-foreground transition-transform',
@@ -211,7 +213,7 @@ function LoanCard({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={tr('Remove repayment of {v0}', { v0: money(r.amount) })}
+                    aria-label={tr(copy.removeEntry, { v0: money(r.amount) })}
                     onClick={() => onUndoRepayment(r)}
                   >
                     <Trash2 className="text-muted-foreground" />
@@ -232,6 +234,7 @@ export function LoansView() {
   const removeLoan = useDeleteLoan();
   const removeRepayment = useDeleteRepayment();
   const { money } = useFormatters();
+  const [tab, setTab] = React.useState<LoanDirection>('BORROWED');
   const [editing, setEditing] = React.useState<{ open: boolean; loan?: Loan }>({ open: false });
   const [repaying, setRepaying] = React.useState<Loan | null>(null);
   const [deleting, setDeleting] = React.useState<Loan | null>(null);
@@ -239,10 +242,12 @@ export function LoansView() {
     null,
   );
 
-  const loans = query.data?.loans ?? [];
-  const totals = query.data?.totals;
-  const owed = loans.filter((l) => l.status !== 'paid');
-  const paid = loans.filter((l) => l.status === 'paid');
+  const copy = LOAN_COPY[tab];
+  const loans = (query.data?.loans ?? []).filter((l) => l.direction === tab);
+  const totals = query.data?.totals[tab];
+  const open = loans.filter((l) => l.status !== 'paid');
+  const settled = loans.filter((l) => l.status === 'paid');
+  const add = () => setEditing({ open: true });
 
   const card = (loan: Loan) => (
     <LoanCard
@@ -259,13 +264,45 @@ export function LoansView() {
     <div className="space-y-6">
       <PageHeader
         title={tr('Loans')}
-        description={tr("Track money you've borrowed and every repayment until it's paid off.")}
+        description={tr(
+          "Track money you've borrowed and money you've lent, with every repayment until it's settled.",
+        )}
         actions={
-          <Button onClick={() => setEditing({ open: true })}>
+          <Button onClick={add}>
             <Plus /> {tr('Add loan')}
           </Button>
         }
       />
+
+      <div
+        role="tablist"
+        aria-label={tr('Loan type')}
+        className="inline-flex gap-1 rounded-lg bg-muted p-1"
+      >
+        {(['BORROWED', 'LENT'] as const).map((direction) => {
+          const openCount = query.data?.totals[direction].activeCount ?? 0;
+          return (
+            <button
+              key={direction}
+              type="button"
+              role="tab"
+              aria-selected={tab === direction}
+              onClick={() => setTab(direction)}
+              className={cn(
+                'flex h-8 items-center gap-2 rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                tab === direction && 'bg-card text-foreground shadow-xs',
+              )}
+            >
+              {tr(LOAN_COPY[direction].tab)}
+              {openCount > 0 && (
+                <span className="rounded-full bg-muted-foreground/15 px-1.5 text-xs tabular">
+                  {openCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {query.isLoading ? (
         <div className="space-y-6">
@@ -294,14 +331,12 @@ export function LoansView() {
       ) : loans.length === 0 ? (
         <Card>
           <EmptyState
-            icon={HandCoins}
-            title={tr('No loans yet')}
-            description={tr(
-              'When you borrow money, add it here. Record each repayment and see what you still owe.',
-            )}
+            icon={DIRECTION_ICON[tab]}
+            title={tr(copy.emptyTitle)}
+            description={tr(copy.emptyDescription)}
             action={
-              <Button onClick={() => setEditing({ open: true })}>
-                <Plus /> {tr('Add your first loan')}
+              <Button onClick={add}>
+                <Plus /> {tr(copy.emptyAction)}
               </Button>
             }
           />
@@ -312,7 +347,7 @@ export function LoansView() {
             <div className="grid gap-4 sm:grid-cols-3">
               <SummaryTile
                 emphasis
-                label={tr('You still owe')}
+                label={tr(copy.summaryOutstanding)}
                 value={money(totals.outstanding)}
                 hint={
                   totals.overdueCount > 0 ? (
@@ -321,26 +356,28 @@ export function LoansView() {
                       {tr('{count} overdue', { count: totals.overdueCount })}
                     </span>
                   ) : (
-                    tr('{count} open loans', { count: totals.activeCount })
+                    tr(totals.activeCount === 1 ? '1 open loan' : '{count} open loans', {
+                      count: totals.activeCount,
+                    })
                   )
                 }
               />
-              <SummaryTile label={tr('Total borrowed')} value={money(totals.borrowed)} />
-              <SummaryTile label={tr('Total repaid')} value={money(totals.repaid)} />
+              <SummaryTile label={tr(copy.summaryTotal)} value={money(totals.amount)} />
+              <SummaryTile label={tr(copy.summaryRepaid)} value={money(totals.repaid)} />
             </div>
           )}
 
-          {owed.length > 0 && (
+          {open.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold">{tr('Still owed')}</h2>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{owed.map(card)}</div>
+              <h2 className="text-sm font-semibold">{tr(copy.sectionOpen)}</h2>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{open.map(card)}</div>
             </section>
           )}
 
-          {paid.length > 0 && (
+          {settled.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold">{tr('Paid off')}</h2>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{paid.map(card)}</div>
+              <h2 className="text-sm font-semibold">{tr(copy.sectionSettled)}</h2>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{settled.map(card)}</div>
             </section>
           )}
         </>
@@ -349,31 +386,30 @@ export function LoansView() {
       <LoanDialog
         open={editing.open}
         loan={editing.loan}
-        onOpenChange={(open) => setEditing((d) => ({ ...d, open }))}
+        defaultDirection={tab}
+        onOpenChange={(isOpen) => setEditing((d) => ({ ...d, open: isOpen }))}
       />
-      <RepayDialog loan={repaying} onOpenChange={(open) => !open && setRepaying(null)} />
+      <RepayDialog loan={repaying} onOpenChange={(isOpen) => !isOpen && setRepaying(null)} />
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
         title={tr('Delete this loan?')}
         description={
           deleting &&
-          tr('The loan from “{name}” and all its repayments will be removed permanently.', {
-            name: deleting.lender,
-          })
+          tr(LOAN_COPY[deleting.direction].deleteDescription, { name: deleting.counterparty })
         }
         onConfirm={() => removeLoan.mutateAsync(deleting!.id)}
       />
       <ConfirmDialog
         open={undoing !== null}
         onOpenChange={(o) => !o && setUndoing(null)}
-        title={tr('Remove this repayment?')}
+        title={undoing ? tr(LOAN_COPY[undoing.loan.direction].undoTitle) : ''}
         confirmLabel="Remove"
         description={
           undoing &&
-          tr('{v0} will be added back to what you owe {name}.', {
+          tr(LOAN_COPY[undoing.loan.direction].undoDescription, {
             v0: money(undoing.repayment.amount),
-            name: undoing.loan.lender,
+            name: undoing.loan.counterparty,
           })
         }
         onConfirm={() =>
