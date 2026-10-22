@@ -110,27 +110,6 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
-        <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-ml-2 lg:hidden"
-            aria-label={tr('Open navigation')}
-            onClick={() => setMenuOpen(true)}
-          >
-            <Menu />
-          </Button>
-          <SheetContent aria-describedby={undefined}>
-            <DialogTitle className="sr-only">{tr('Navigation')}</DialogTitle>
-            <div className="px-5 pt-5 pb-6">
-              <Logo />
-            </div>
-            <div className="px-3">
-              <NavLinks onNavigate={() => setMenuOpen(false)} />
-            </div>
-          </SheetContent>
-        </Dialog>
-
         <Link href="/dashboard" className="lg:hidden" aria-label={tr('Daily Expense home')}>
           <Logo showText={false} />
         </Link>
@@ -145,6 +124,27 @@ export function AppHeader() {
           <ThemeToggle />
           <LanguageToggle />
           <UserMenu />
+          {/* Phones and tablets: navigation opens from the right, next to the thumb. */}
+          <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-mr-2 lg:hidden"
+              aria-label={tr('Open navigation')}
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu />
+            </Button>
+            <SheetContent side="right" aria-describedby={undefined}>
+              <DialogTitle className="sr-only">{tr('Navigation')}</DialogTitle>
+              <div className="px-5 pt-5 pb-6">
+                <Logo />
+              </div>
+              <div className="px-3">
+                <NavLinks onNavigate={() => setMenuOpen(false)} />
+              </div>
+            </SheetContent>
+          </Dialog>
         </div>
       </div>
     </header>
